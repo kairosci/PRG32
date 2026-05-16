@@ -77,6 +77,24 @@ Common pitfalls:
 - `idf.py` missing: ESP-IDF not sourced.
 - `riscv32-esp-elf-gcc` missing: ESP-IDF toolchain not installed/sourced.
 
+## PlatformIO Quick Start
+
+Open the repository root in PlatformIO. The checked-in `platformio.ini` default
+environment is `prg32-esp32c6`, which targets the ESP32-C6 DevKitC-1 with
+ESP-IDF, reuses the standard `main` component, and applies
+`partitions_prg32.csv` plus `sdkconfig.defaults`.
+
+CLI equivalents:
+
+```bash
+pio run
+pio run -t upload
+pio device monitor -b 115200
+```
+
+The PlatformIO environment is for the physical ESP32-C6 classroom board. Keep
+using the `idf.py` commands in `docs/qemu.md` for QEMU screen builds.
+
 ## 🧠 How PRG32 works
 
 - PRG32 is **not** a CPU instruction emulator.

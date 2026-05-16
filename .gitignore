@@ -44,6 +44,9 @@ build/
 Build/
 build-*/
 managed_components/
+.pio/
+platformio_override.ini
+sdkconfig.prg32-*
 
 # CMake generated files
 CMakeFiles/
