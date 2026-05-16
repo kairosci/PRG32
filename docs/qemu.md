@@ -190,6 +190,9 @@ uses a virtual panel that does not exist on real PRG32 hardware.
 
 ## References
 
-- [ESP-IDF QEMU Emulator for ESP32-C3](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/api-guides/tools/qemu.html)
+- [ESP-IDF QEMU Emulator for ESP32-C3][esp-idf-qemu]
 - [Espressif `esp_lcd_qemu_rgb` component](https://components.espressif.com/components/espressif/esp_lcd_qemu_rgb)
-- [IDF Component Manager manifest reference](https://docs.espressif.com/projects/idf-component-manager/en/latest/reference/manifest_file.html)
+- [IDF Component Manager manifest reference][idf-component-manifest]
+
+[esp-idf-qemu]: https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/api-guides/tools/qemu.html
+[idf-component-manifest]: https://docs.espressif.com/projects/idf-component-manager/en/latest/reference/manifest_file.html

@@ -53,7 +53,7 @@ python3 tools/prg32_game.py build \
   --out "$DEMO_CART"
 
 if [[ ! -f "$DEMO_FLASH" ]]; then
-  fail "Missing $DEMO_FLASH. Run this once first: idf.py -B $QEMU_BUILD_DIR -D SDKCONFIG_DEFAULTS=$QEMU_DEFAULTS qemu --graphics monitor"
+  fail "Missing $DEMO_FLASH. Run QEMU once first with tools/qemu.sh."
 fi
 
 info "Staging demo cartridge into QEMU flash"

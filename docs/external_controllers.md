@@ -2,7 +2,10 @@
 
 ## Important ESP32-C6 limitation
 
-ESP32-C6 provides USB Serial/JTAG functionality for connection to a host PC. It is not a general-purpose USB host port for directly plugging in standard USB HID game controllers. PRG32 therefore supports USB controllers through an **external USB-host bridge**.
+ESP32-C6 provides USB Serial/JTAG functionality for connection to a host PC. It
+is not a general-purpose USB host port for directly plugging in standard USB HID
+game controllers. PRG32 therefore supports USB controllers through an
+**external USB-host bridge**.
 
 Recommended bridge choices:
 
@@ -54,8 +57,10 @@ In `main/prg32_config.h`:
 #define PRG32_PIN_CONTROLLER_RX 19
 ```
 
-The function `prg32_input_read()` merges GPIO buttons and the bridge state, so local arcade buttons and external USB controllers can be used at the same time.
+The function `prg32_input_read()` merges GPIO buttons and the bridge state, so
+local arcade buttons and external USB controllers can be used at the same time.
 
 ## Teaching note
 
-This layer is deliberately similar to memory-mapped console input: the assembly game sees one integer register-like value and tests bits with `andi`.
+This layer is deliberately similar to memory-mapped console input: the assembly
+game sees one integer register-like value and tests bits with `andi`.

@@ -429,16 +429,19 @@ def doctor(args: argparse.Namespace) -> None:
         failures += 1
         print(f"[FAIL] {msg}")
 
-    if shutil.which("idf.py"):
-        ok("idf.py found")
+    if args.host_only:
+        ok("host-only mode skips ESP-IDF toolchain checks")
     else:
-        fail("idf.py missing (source ESP-IDF export.sh)")
+        if shutil.which("idf.py"):
+            ok("idf.py found")
+        else:
+            fail("idf.py missing (source ESP-IDF export.sh)")
 
-    gcc_name = args.tool_prefix + "gcc"
-    if shutil.which(gcc_name):
-        ok(f"{gcc_name} found")
-    else:
-        fail(f"{gcc_name} missing (source ESP-IDF export.sh)")
+        gcc_name = args.tool_prefix + "gcc"
+        if shutil.which(gcc_name):
+            ok(f"{gcc_name} found")
+        else:
+            fail(f"{gcc_name} missing (source ESP-IDF export.sh)")
 
     partitions_path = Path(args.partitions)
     if partitions_path.exists():
@@ -495,6 +498,11 @@ def main(argv: list[str]) -> int:
     p = sub.add_parser("doctor", help="check local toolchain prerequisites")
     p.add_argument("--partitions", default=str(DEFAULT_PARTITION_TABLE))
     p.add_argument("--slot", default=DEFAULT_CART_SLOT)
+    p.add_argument(
+        "--host-only",
+        action="store_true",
+        help="skip ESP-IDF and RISC-V toolchain checks for CI/unit-test hosts",
+    )
     p.set_defaults(func=doctor)
 
     args = parser.parse_args(argv)

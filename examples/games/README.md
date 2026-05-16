@@ -17,7 +17,9 @@ Each game has:
 
 ## Using an Example in a Lab
 
-Copy or reference one game source from `examples/games` in `main/CMakeLists.txt`, then provide a small C wrapper or select the symbols required by the lab.
+Copy or reference one game source from `examples/games` in
+`main/CMakeLists.txt`, then provide a small C wrapper or select the symbols
+required by the lab.
 
 Minimal CMake experiment:
 
@@ -39,7 +41,8 @@ void pong_graphics_update(void);
 void pong_graphics_draw(void);
 ```
 
-The default PRG32 app is intentionally a clean Hello World so students learn how source files enter the build.
+The default PRG32 app is intentionally a clean Hello World so students learn how
+source files enter the build.
 
 The same temporary game build can be tested in QEMU:
 

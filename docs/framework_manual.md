@@ -1,10 +1,13 @@
 # PRG32 Framework Manual
 
-PRG32 lets students write game logic in RISC-V assembly while a small C framework provides hardware access.
+PRG32 lets students write game logic in RISC-V assembly while a small C
+framework provides hardware access.
 
 ## Assembly ABI
 
-Arguments use the standard RISC-V calling convention: `a0` to `a7` carry arguments and return values, `ra` holds the return address, and `sp` is kept 16-byte aligned around C calls.
+Arguments use the standard RISC-V calling convention: `a0` to `a7` carry
+arguments and return values, `ra` holds the return address, and `sp` is kept
+16-byte aligned around C calls.
 
 ## Console modes
 
@@ -14,9 +17,14 @@ Arguments use the standard RISC-V calling convention: `a0` to `a7` carry argumen
 
 ## Graphics model
 
-The physical display is 320x240, but the game viewport is 320x200. The extra vertical area is reserved for border, status, or debugging. The ILI9341 renderer tracks dirty rectangles and sends only changed areas over SPI using ESP-IDF SPI DMA.
+The physical display is 320x240, but the game viewport is 320x200. The extra
+vertical area is reserved for border, status, or debugging. The ILI9341 renderer
+tracks dirty rectangles and sends only changed areas over SPI using ESP-IDF SPI
+DMA.
 
-The QEMU renderer exposes the same 320x200 PRG32 viewport through Espressif's virtual RGB panel. Student assembly code does not change; only the selected display backend changes.
+The QEMU renderer exposes the same 320x200 PRG32 viewport through Espressif's
+virtual RGB panel. Student assembly code does not change; only the selected
+display backend changes.
 
 For classroom debugging, optional helper `prg32_debug_overlay_draw` can print
 `x`, `y`, input mask, frame, and tick info on the top scanline.
@@ -60,11 +68,13 @@ is loaded.
 
 ## Tile engine
 
-The tile engine exposes a 40x25 grid of 8x8 tiles. This matches a 320x200 retro screen exactly.
+The tile engine exposes a 40x25 grid of 8x8 tiles. This matches a 320x200 retro
+screen exactly.
 
 ## Sprite engine
 
-The sprite layer provides simple bitmap drawing and axis-aligned bounding-box collision detection.
+The sprite layer provides simple bitmap drawing and axis-aligned bounding-box
+collision detection.
 
 ## Audio
 

@@ -55,7 +55,9 @@ See `docs/cartridges.md`.
 
 ## Build an example game
 
-Example games live outside the default app in `examples/games`. During labs, add one source file to `main/CMakeLists.txt` and call its exported symbols from `main/main.c`.
+Example games live outside the default app in `examples/games`. During labs,
+add one source file to `main/CMakeLists.txt` and call its exported symbols from
+`main/main.c`.
 
 Example game builds may still use `main/prg32_config.h` for display mode, pins,
 and Wi-Fi credentials:

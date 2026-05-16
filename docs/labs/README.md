@@ -1,6 +1,7 @@
 # PRG32 Labs
 
-These labs are designed for 90 minute classroom blocks. Each lab has a concrete board-visible result and a short reflection task.
+These labs are designed for 90 minute classroom blocks. Each lab has a concrete
+board-visible result and a short reflection task.
 
 Labs can be run on real ESP32-C6 hardware or in QEMU with the virtual PRG32
 screen. Use QEMU for early graphics/debugging practice when boards are not
@@ -12,7 +13,8 @@ available, then validate final wiring, buttons, and sound on physical hardware.
 2. `lab_02_input.md`: read GPIO buttons and controller bits.
 3. `lab_03_graphics.md`: draw and move a rectangle.
 4. `lab_04_sound.md`: add sound effects and frame timing.
-5. `lab_05_scores_and_controllers.md`: submit scores and use the UART controller bridge.
+5. `lab_05_scores_and_controllers.md`: submit scores and use the UART
+   controller bridge.
 6. Optional cartridge workflow: build and upload games without reflashing; see
    `docs/cartridges.md`.
 
@@ -25,7 +27,8 @@ available, then validate final wiring, buttons, and sound on physical hardware.
 
 - `break_fix_assignments.md`
 
-Recommended pattern: students commit the working baseline before each break/fix task, then submit a short note explaining the bug, the evidence, and the fix.
+Recommended pattern: students commit the working baseline before each break/fix
+task, then submit a short note explaining the bug, the evidence, and the fix.
 
 ## QEMU Lab Workflow
 

@@ -98,7 +98,8 @@ using the `idf.py` commands in `docs/qemu.md` for QEMU screen builds.
 ## 🧠 How PRG32 works
 
 - PRG32 is **not** a CPU instruction emulator.
-- Code runs natively on ESP32-C6 hardware, or on Espressif QEMU firmware target (ESP32-C3) for desktop graphics/testing.
+- Code runs natively on ESP32-C6 hardware, or on Espressif QEMU firmware target
+  ESP32-C3 for desktop graphics/testing.
 - Games are distributed as cartridges (`.prg32`) loaded by the runtime.
 
 Flow:
@@ -109,13 +110,29 @@ Flow:
 
 ## ❗ Troubleshooting
 
-| Problem | Cause | Fix |
-|---|---|---|
-| `idf.py: command not found` | ESP-IDF environment not sourced | Run `. $HOME/esp-idf/export.sh` |
-| QEMU runs but game does not move | QEMU defaults disable physical GPIO buttons; no UART bridge input | Use a UART bridge packet source, or verify logic with debug overlay/GDB |
-| Cartridge upload fails | Missing/invalid `build-qemu/qemu_flash.bin` or oversized cartridge | Run QEMU once to create flash file, then rerun `upload-qemu`; check cartridge size |
-| `riscv32-esp-elf-gcc` missing | Toolchain not in PATH | Re-run `./install.sh esp32c3,esp32c6` and source export script |
-| Partition mismatch errors | Cartridge staged using wrong partition layout/slot | Use `tools/prg32_game.py doctor` and verify `partitions_prg32.csv` + slot |
+- `idf.py: command not found`: ESP-IDF is not sourced. Run
+  `. $HOME/esp-idf/export.sh`.
+- QEMU runs but the game does not move: QEMU defaults disable physical GPIO
+  buttons. Use a UART bridge packet source, or debug logic with the overlay/GDB.
+- Cartridge upload fails: `build-qemu/qemu_flash.bin` is missing/invalid, or the
+  cartridge is too large. Run QEMU once, then rerun `upload-qemu`.
+- `riscv32-esp-elf-gcc` missing: re-run `./install.sh esp32c3,esp32c6` and
+  source the ESP-IDF export script.
+- Partition mismatch errors: run `tools/prg32_game.py doctor` and verify
+  `partitions_prg32.csv` plus the selected cartridge slot.
+
+## Learning Path
+
+1. Build and flash the resident firmware.
+2. Run the Hello World app on the serial monitor and display.
+3. Read `docs/tutorial.md` to learn the PRG32 ABI.
+4. Complete the labs in `docs/labs`.
+5. Modify one example game under `examples/games`.
+6. Package it as a `.prg32` cartridge and upload it over Wi-Fi or stage it into
+   the QEMU flash image.
+
+The intended student rhythm is small and visible: change one thing, run it,
+observe the result, and write down what changed.
 
 ## Runtime APIs
 
@@ -154,6 +171,16 @@ Expected result:
 - warnings may appear but are non-blocking
 - final output shows `=== SMOKE TEST PASSED ===`
 
+For GitHub Actions and machines without ESP-IDF, the repository also provides a
+host-only smoke test:
+
+```bash
+bash scripts/ci_smoke_test.sh
+```
+
+That check runs Python syntax checks, unit tests, whitespace validation, and the
+cartridge tool doctor in host-only mode.
+
 ## Screenshots
 
 Place images under `docs/images/`.
@@ -173,6 +200,8 @@ See `docs/images/README.md` for capture instructions.
 - `examples/games`: assembly demos
 - `tools/prg32_game.py`: cartridge tooling
 - `docs`: tutorials, labs, API docs
+- `.github/workflows/ci.yml`: GitHub Actions smoke and firmware build workflow
+- `tests`: host-side unit tests for tooling and documentation hygiene
 
 ## Repository Structure (Academic View)
 
@@ -188,9 +217,10 @@ See `docs/images/README.md` for capture instructions.
 - Raffaele Montella - UniParthenope - academic supervisor / project lead
 - Ivan Cafiero - UniParthenope - Computer Science student
 
-See [CONTRIBUTORS.md](/Users/ivan/Desktop/PRG32/CONTRIBUTORS.md) for contributor metadata suitable for academic submissions.
+See [CONTRIBUTORS.md](CONTRIBUTORS.md) for contributor metadata suitable for
+academic submissions.
 
 ## Citation
 
 For reports, theses, or coursework submissions, use the citation metadata in
-[CITATION.cff](/Users/ivan/Desktop/PRG32/CITATION.cff).
+[CITATION.cff](CITATION.cff).
