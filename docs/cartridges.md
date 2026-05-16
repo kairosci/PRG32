@@ -20,13 +20,15 @@ PRG32 firmware
 
 game.prg32
 |-- PRG32 cartridge header
-`-- linked RV32 code/data payload
+|-- linked RV32 code/data payload
+`-- optional AUDIO block
 ```
 
 The firmware exports the PRG32 API addresses and the cartridge RAM address.
 `tools/prg32_game.py` links a game against those addresses and creates a
 `.prg32` package. The firmware validates the package, persists it in `cart0`,
-copies it into executable cartridge RAM, and calls:
+loads any optional AUDIO block, copies code into executable cartridge RAM, and
+calls:
 
 - `<game>_init`
 - `<game>_update`
@@ -231,6 +233,35 @@ python3 tools/prg32_game.py build \
 Keep C cartridges small and avoid standard-library calls. Use the helpers in
 `prg32.h` for display, input, audio, sprites, playfields, and platform physics.
 
+## Cartridge AUDIO Blocks
+
+Cartridges can include a trailing AUDIO block marked by
+`PRG32_CART_FLAG_AUDIO_BLOCK`. This block carries sample descriptors,
+instrument descriptors, tracker events, and raw unsigned 8-bit sample bytes.
+
+Pack an AUDIO block:
+
+```bash
+python3 tools/wav2prg32sample.py jump.wav --rate 22050 --out build/jump.raw
+python3 tools/prg32audio_pack.py audio.json --out build/audio.block
+```
+
+Attach it to a cartridge:
+
+```bash
+python3 tools/prg32_game.py build \
+  examples/games/asteroids/graphics/game.S \
+  --firmware-elf build/PRG32.elf \
+  --entry-prefix asteroids_graphics \
+  --audio-block build/audio.block \
+  --name asteroids-audio \
+  --out build/asteroids-audio.prg32
+```
+
+The firmware loads the AUDIO block before calling `<game>_init`, so a cartridge
+can immediately call `prg32_audio_play_sample(0, 255, 1024)` when sample `0` is
+defined in the block. Cartridges without AUDIO blocks remain valid.
+
 ## Limits
 
 This is intentionally a classroom loader, not a general dynamic linker.
@@ -238,5 +269,7 @@ This is intentionally a classroom loader, not a general dynamic linker.
 - Cartridges are linked for one PRG32 firmware build.
 - If the firmware is rebuilt, rebuild the cartridges.
 - Cartridge RAM is 32 KiB.
+- AUDIO blocks are stored after the code payload and count against cartridge
+  partition size, not cartridge executable RAM.
 - Only one active cartridge slot is currently used.
 - QEMU staging requires QEMU to be stopped before patching `qemu_flash.bin`.

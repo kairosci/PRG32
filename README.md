@@ -103,6 +103,8 @@ using the `idf.py` commands in `docs/qemu.md` for QEMU screen builds.
 - Games are distributed as cartridges (`.prg32`) loaded by the runtime.
 - Input supports one or two digital joystick modules through the same PRG32
   bitmask used by QEMU and cartridge tests.
+- Audio supports mandatory mono I2S output and optional stereo PRG32 Audio Plus
+  using MAX98357A amplifier breakouts.
 
 Flow:
 
@@ -144,6 +146,7 @@ The `examples/features` directory contains focused demos for framework features:
 - scrolling and parallax playfields
 - animated sprites
 - dual playfield rendering
+- startup and game title splash screens
 - joystick-driven on-screen keyboard input
 - Wi-Fi setup mode
 - audio synthesis and sample playback
@@ -151,6 +154,26 @@ The `examples/features` directory contains focused demos for framework features:
 
 Use these before building a full game when the lesson is about one graphics
 technique rather than game rules.
+
+## Audio
+
+PRG32 supports retro-style digital audio through I2S.
+
+The default configuration uses one MAX98357A I2S DAC/amplifier breakout for
+mono output. Optional stereo output, called PRG32 Audio Plus, uses two
+MAX98357A breakouts on the same I2S bus: one configured for the left channel
+and one configured for the right channel.
+
+Start with:
+
+- `examples/audio_mono_beep`
+- `examples/audio_mono_sample`
+- `examples/audio_mono_tracker`
+- `examples/audio_stereo_pan_test`
+- `examples/audio_stereo_music`
+
+See [docs/audio.md](docs/audio.md) for wiring, API, cartridge AUDIO blocks, and
+troubleshooting.
 
 ## Example Games
 
@@ -195,6 +218,10 @@ The C programming tutorial is [docs/tutorial_c_game.md](docs/tutorial_c_game.md)
 - `tools/prg32_image_convert.py`: convert PNG/JPEG/GIF assets to C or assembly.
 - `tools/prg32_image_prepare.py`: interactive terminal preparation helper.
 - `tools/prg32_audio_convert.py`: convert WAV samples or MIDI tracks.
+- `tools/wav2prg32sample.py`: convert WAV to unsigned 8-bit PRG32 sample data.
+- `tools/midi2prg32audio.py`: convert simple MIDI notes to tracker JSON.
+- `tools/prg32audio_pack.py`: pack samples, instruments, and tracks into an
+  AUDIO block for `.prg32` cartridges.
 
 See [docs/assets.md](docs/assets.md).
 
@@ -258,6 +285,7 @@ See `docs/images/README.md` for capture instructions.
 - `tools/prg32_game.py`: cartridge tooling
 - `tools/prg32_image_convert.py`: image and animation converter
 - `tools/prg32_audio_convert.py`: sample and MIDI converter
+- `tools/prg32audio_pack.py`: AUDIO block packer
 - `docs`: tutorials, labs, API docs
 - `.github/workflows/ci.yml`: GitHub Actions smoke and firmware build workflow
 - `tests`: host-side unit tests for tooling and documentation hygiene

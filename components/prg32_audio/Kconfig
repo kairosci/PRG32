@@ -1,0 +1,67 @@
+menu "PRG32 Audio"
+
+config PRG32_AUDIO_ENABLED
+    bool "Enable PRG32 I2S audio runtime"
+    default y
+    help
+        Enable the PRG32 digital audio runtime. The runtime is safe when no
+        speaker is attached; sound is produced only after student code calls
+        prg32_audio_init().
+
+config PRG32_AUDIO_SAMPLE_RATE
+    int "Audio sample rate"
+    depends on PRG32_AUDIO_ENABLED
+    default 22050
+    range 8000 44100
+    help
+        Mixer and I2S output sample rate. 22050 Hz is the classroom default.
+
+choice PRG32_AUDIO_MODE
+    prompt "Default audio mode"
+    depends on PRG32_AUDIO_ENABLED
+    default PRG32_AUDIO_MODE_MONO
+
+config PRG32_AUDIO_MODE_MONO
+    bool "Mono audio"
+    help
+        Default PRG32 audio mode. Use one MAX98357A I2S DAC/amplifier.
+
+config PRG32_AUDIO_MODE_STEREO
+    bool "Stereo audio (PRG32 Audio Plus)"
+    help
+        Optional PRG32 Audio Plus mode. Use two MAX98357A boards on the same
+        I2S bus, with one board selecting left and the other selecting right.
+
+endchoice
+
+config PRG32_AUDIO_MAX_VOICES
+    int "Maximum mixer voices"
+    depends on PRG32_AUDIO_ENABLED
+    default 6
+    range 1 8
+    help
+        Number of simultaneous sample/synth voices. Mono defaults to 6.
+
+config PRG32_AUDIO_I2S_BCLK_GPIO
+    int "I2S BCLK GPIO"
+    depends on PRG32_AUDIO_ENABLED
+    default 4
+
+config PRG32_AUDIO_I2S_LRCLK_GPIO
+    int "I2S LRCLK/WS GPIO"
+    depends on PRG32_AUDIO_ENABLED
+    default 5
+
+config PRG32_AUDIO_I2S_DATA_GPIO
+    int "I2S DATA/DIN GPIO"
+    depends on PRG32_AUDIO_ENABLED
+    default 6
+
+config PRG32_AUDIO_I2S_SD_GPIO
+    int "I2S SD/shutdown GPIO"
+    depends on PRG32_AUDIO_ENABLED
+    default 7
+    help
+        Optional amplifier shutdown/control GPIO. Set to -1 when not wired.
+
+endmenu

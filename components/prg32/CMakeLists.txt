@@ -36,10 +36,12 @@ idf_component_register(
         "prg32_keyboard.c"
         "prg32_platform.c"
         "prg32_sprite.c"
+        "prg32_splash.c"
         "prg32_system.c"
         "prg32_tile.c"
         "prg32_wifi.c"
     INCLUDE_DIRS "include"
+    REQUIRES prg32_audio
     PRIV_INCLUDE_DIRS "../../main"
     PRIV_REQUIRES ${PRG32_PRIV_REQUIRES}
 )

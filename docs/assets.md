@@ -71,3 +71,38 @@ python3 -m pip install pillow mido
 
 Generated arrays can be included in firmware examples or packaged into
 uploadable cartridges when they fit inside the cartridge RAM limit.
+
+## Cartridge AUDIO Blocks
+
+For PRG32 I2S audio, prefer raw unsigned 8-bit sample data plus an AUDIO block:
+
+```bash
+python3 tools/wav2prg32sample.py kick.wav \
+  --rate 22050 \
+  --normalize \
+  --trim-silence \
+  --out build/kick.raw
+```
+
+Create `audio.json`:
+
+```json
+{
+  "samples": [{"file": "kick.raw", "base_note": 60}],
+  "instruments": [{"sample_id": 0, "default_volume": 255, "default_pan": 0}],
+  "tracks": [
+    {
+      "events": [
+        {"delta": 0, "command": "PLAY_SAMPLE", "arg0": 0, "arg1": 255},
+        {"delta": 6, "command": "END", "arg0": 0, "arg1": 0}
+      ]
+    }
+  ]
+}
+```
+
+Pack it:
+
+```bash
+python3 tools/prg32audio_pack.py audio.json --out build/audio.block
+```

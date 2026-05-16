@@ -28,8 +28,21 @@ The game should make a sound on collision and continue moving smoothly. Advanced
 students can compare `prg32_audio_beep`, `prg32_audio_play_notes`, and
 `prg32_audio_sample_u8`.
 
-QEMU can verify that the code path reaches `prg32_audio_beep`, but final sound
-behavior must be checked on hardware with the passive buzzer.
+QEMU can verify that the code path reaches the audio calls, but final sound
+behavior must be checked on hardware with the passive buzzer or MAX98357A audio
+board.
+
+## Extension: I2S Audio
+
+1. Wire one MAX98357A as shown in `docs/audio.md`.
+2. Run `examples/audio_mono_beep`.
+3. Replace the generated square sample with a short WAV converted through
+   `tools/wav2prg32sample.py`.
+4. Pack the sample with `tools/prg32audio_pack.py`.
+5. Build a cartridge with `tools/prg32_game.py build --audio-block`.
+
+Checkpoint: the cartridge can call `prg32_audio_play_sample(0, 255, 1024)` and
+hear sample `0` without reflashing the resident firmware.
 
 ## Reflection
 

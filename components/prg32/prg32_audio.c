@@ -5,7 +5,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-void prg32_audio_init(void) {
+void prg32_audio_pwm_init(void) {
     if (PRG32_PIN_BUZZER < 0) {
         return;
     }

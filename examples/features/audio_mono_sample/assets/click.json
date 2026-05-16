@@ -1,0 +1,16 @@
+{
+  "samples": [
+    {
+      "file": "click.raw",
+      "base_note": 60
+    }
+  ],
+  "instruments": [
+    {
+      "sample_id": 0,
+      "default_volume": 255,
+      "default_pan": 0
+    }
+  ],
+  "tracks": []
+}

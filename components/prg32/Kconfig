@@ -33,4 +33,19 @@ config PRG32_QEMU_FAIL_ON_REAL_HW
         Keep this enabled so accidental real-hardware flashes stop clearly
         during display initialization instead of silently losing graphics.
 
+config PRG32_SPLASH_ENABLED
+    bool "Show PRG32 startup splash"
+    default y
+    help
+        Draw the PRG32 splash screen when the resident firmware starts.
+
+config PRG32_SPLASH_DURATION_MS
+    int "Startup splash duration in milliseconds"
+    depends on PRG32_SPLASH_ENABLED
+    default 900
+    range 0 5000
+    help
+        How long the firmware startup splash remains visible before runtime
+        initialization continues.
+
 endmenu

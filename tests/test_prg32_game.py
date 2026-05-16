@@ -69,6 +69,16 @@ not-a-symbol
         self.assertIn("prg32_platform_actor_step", prg32_game.IMPORT_NAMES)
         self.assertIn("prg32_platform_camera_follow", prg32_game.IMPORT_NAMES)
 
+    def test_imports_include_audio_plus_helpers(self) -> None:
+        self.assertIn("prg32_audio_play_sample_pan", prg32_game.IMPORT_NAMES)
+        self.assertIn("prg32_audio_note_on_pan", prg32_game.IMPORT_NAMES)
+        self.assertIn("prg32_audio_get_mode", prg32_game.IMPORT_NAMES)
+
+    def test_imports_include_splash_helpers(self) -> None:
+        self.assertIn("prg32_splash_draw", prg32_game.IMPORT_NAMES)
+        self.assertIn("prg32_splash_show", prg32_game.IMPORT_NAMES)
+        self.assertIn("prg32_splash_show_default", prg32_game.IMPORT_NAMES)
+
     def test_detect_entries_accepts_c_prefix(self) -> None:
         entries = prg32_game.detect_entries(
             {

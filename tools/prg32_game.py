@@ -27,6 +27,8 @@ CART_HEADER = struct.Struct("<4sHHHHIIIIIII32s")
 CART_MAGIC = b"PRG2"
 CART_ABI_MAJOR = 1
 CART_ABI_MINOR = 0
+PRG32_CART_FLAG_AUDIO_BLOCK = 1 << 0
+AUDIO_BLOCK_MAGIC = b"AUD0"
 DEFAULT_PARTITION_TABLE = ROOT / "partitions_prg32.csv"
 DEFAULT_CART_SLOT = "cart0"
 FALLBACK_CART_RAM_SIZE = 32 * 1024
@@ -41,6 +43,22 @@ IMPORT_NAMES = [
     "prg32_audio_note",
     "prg32_audio_play_notes",
     "prg32_audio_sample_u8",
+    "prg32_audio_init",
+    "prg32_audio_shutdown",
+    "prg32_audio_get_mode",
+    "prg32_audio_play_sample",
+    "prg32_audio_play_sample_pan",
+    "prg32_audio_stop_channel",
+    "prg32_audio_stop_all",
+    "prg32_audio_note_on",
+    "prg32_audio_note_on_pan",
+    "prg32_audio_note_off",
+    "prg32_audio_play_track",
+    "prg32_audio_stop_track",
+    "prg32_audio_set_tempo",
+    "prg32_audio_set_master_volume",
+    "prg32_audio_set_channel_volume",
+    "prg32_audio_set_channel_pan",
     "prg32_wifi_start_mode",
     "prg32_wifi_current_mode",
     "prg32_wifi_setup_requested",
@@ -54,6 +72,9 @@ IMPORT_NAMES = [
     "prg32_gfx_pixel",
     "prg32_gfx_rect",
     "prg32_gfx_text8",
+    "prg32_splash_draw",
+    "prg32_splash_show",
+    "prg32_splash_show_default",
     "prg32_debug_overlay_draw",
     "prg32_keyboard_init",
     "prg32_keyboard_update",
@@ -331,6 +352,7 @@ def build(args: argparse.Namespace) -> None:
             "-march=" + args.march,
             "-mabi=" + args.mabi,
             "-I", str(ROOT / "components/prg32/include"),
+            "-I", str(ROOT / "components/prg32_audio/include"),
             "-I", str(ROOT / "main"),
             "-c", str(source),
             "-o", str(obj),
@@ -368,6 +390,21 @@ def build(args: argparse.Namespace) -> None:
         run([args.tool_prefix + "objcopy", "-O", "binary", str(elf), str(raw)])
 
         code = raw.read_bytes()
+        audio_block = b""
+        flags = 0
+        if args.audio_block:
+            audio_block = Path(args.audio_block).read_bytes()
+            if len(audio_block) < 40 or audio_block[:4] != AUDIO_BLOCK_MAGIC:
+                raise SystemExit(
+                    f"{args.audio_block} is not a PRG32 AUDIO block"
+                )
+            block_size = struct.unpack_from("<I", audio_block, 36)[0]
+            if block_size != len(audio_block):
+                raise SystemExit(
+                    f"{args.audio_block} declares {block_size} bytes "
+                    f"but file has {len(audio_block)}"
+                )
+            flags |= PRG32_CART_FLAG_AUDIO_BLOCK
         start = linked_symbols["__cart_start"]
         end = linked_symbols["__cart_end"]
         mem_size = end - start
@@ -387,7 +424,7 @@ def build(args: argparse.Namespace) -> None:
             CART_ABI_MAJOR,
             CART_ABI_MINOR,
             CART_HEADER.size,
-            0,
+            flags,
             load_addr,
             len(code),
             mem_size,
@@ -398,11 +435,11 @@ def build(args: argparse.Namespace) -> None:
             name_bytes + b"\0" * (32 - len(name_bytes)),
         )
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_bytes(header + code)
+        out.write_bytes(header + code + audio_block)
 
     print(
         f"built {out} name={name} load=0x{load_addr:08x} "
-        f"code={len(code)} mem={mem_size}"
+        f"code={len(code)} mem={mem_size} audio={len(audio_block)}"
     )
 
 
@@ -527,6 +564,10 @@ def main(argv: list[str]) -> int:
     p.add_argument("--entry-prefix")
     p.add_argument("--runtime-url")
     p.add_argument("--firmware-elf")
+    p.add_argument(
+        "--audio-block",
+        help="optional PRG32 AUDIO block produced by tools/prg32audio_pack.py",
+    )
     p.add_argument("--march", default="rv32imc_zicsr_zifencei")
     p.add_argument("--mabi", default="ilp32")
     p.set_defaults(func=build)

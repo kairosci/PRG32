@@ -29,6 +29,7 @@ static prg32_cart_header_t g_header;
 static prg32_cart_entry_t g_init;
 static prg32_cart_entry_t g_update;
 static prg32_cart_entry_t g_draw;
+static uint32_t g_audio_size;
 static uint32_t g_generation;
 static bool g_loaded;
 static bool g_stored;
@@ -95,11 +96,15 @@ static const esp_partition_t *cart_partition(void) {
 
 static int validate_header(const prg32_cart_header_t *h,
                            size_t image_size,
-                           const uint8_t **payload) {
-    if (!h || !payload) {
+                           const uint8_t **payload,
+                           const uint8_t **audio_block,
+                           size_t *audio_size) {
+    if (!h || !payload || !audio_block || !audio_size) {
         set_error("missing cartridge image");
         return -1;
     }
+    *audio_block = NULL;
+    *audio_size = 0;
     if (image_size < PRG32_CART_HEADER_MIN_SIZE) {
         set_error("cartridge image is too small");
         return -1;
@@ -161,13 +166,32 @@ static int validate_header(const prg32_cart_header_t *h,
                    (unsigned long)crc);
         return -1;
     }
+    if ((h->flags & PRG32_CART_FLAG_AUDIO_BLOCK) != 0u) {
+        size_t audio_offset = (size_t)h->header_size + h->code_size;
+        if (image_size < audio_offset + sizeof(prg32_audio_block_header_t)) {
+            set_error("cartridge AUDIO block is truncated");
+            return -1;
+        }
+        const prg32_audio_block_header_t *audio =
+            (const prg32_audio_block_header_t *)(((const uint8_t *)h) + audio_offset);
+        if (memcmp(audio->magic, PRG32_AUDIO_BLOCK_MAGIC, 4) != 0 ||
+            audio->block_size < sizeof(*audio) ||
+            audio_offset + audio->block_size > image_size) {
+            set_error("cartridge AUDIO block header is invalid");
+            return -1;
+        }
+        *audio_block = (const uint8_t *)audio;
+        *audio_size = audio->block_size;
+    }
     return 0;
 }
 
 static int load_image_locked(const void *image, size_t image_size) {
     const prg32_cart_header_t *h = (const prg32_cart_header_t *)image;
     const uint8_t *payload = NULL;
-    if (validate_header(h, image_size, &payload) != 0) {
+    const uint8_t *audio_block = NULL;
+    size_t audio_size = 0;
+    if (validate_header(h, image_size, &payload, &audio_block, &audio_size) != 0) {
         return -1;
     }
 
@@ -177,6 +201,17 @@ static int load_image_locked(const void *image, size_t image_size) {
     __asm__ volatile("fence.i" ::: "memory");
 
     memcpy(&g_header, h, sizeof(g_header));
+    if (audio_block && audio_size) {
+        if (prg32_audio_load_block(audio_block, audio_size) != 0) {
+            g_loaded = false;
+            set_error("failed to load cartridge AUDIO block");
+            return -1;
+        }
+        g_audio_size = (uint32_t)audio_size;
+    } else {
+        prg32_audio_clear_assets();
+        g_audio_size = 0;
+    }
     g_init = (prg32_cart_entry_t)(void *)(prg32_cart_exec + h->init_offset);
     g_update = (prg32_cart_entry_t)(void *)(prg32_cart_exec + h->update_offset);
     g_draw = (prg32_cart_entry_t)(void *)(prg32_cart_exec + h->draw_offset);
@@ -184,10 +219,11 @@ static int load_image_locked(const void *image, size_t image_size) {
     g_generation++;
     set_error("ok");
     ESP_LOGI(TAG,
-             "loaded cartridge '%s' (%lu bytes code, %lu bytes memory)",
+             "loaded cartridge '%s' (%lu bytes code, %lu bytes memory, %lu bytes audio)",
              g_header.name,
              (unsigned long)g_header.code_size,
-             (unsigned long)g_header.mem_size);
+             (unsigned long)g_header.mem_size,
+             (unsigned long)g_audio_size);
     return 0;
 }
 
@@ -247,6 +283,18 @@ int prg32_cart_load_stored(void) {
     }
 
     size_t image_size = h->header_size + h->code_size;
+    if ((h->flags & PRG32_CART_FLAG_AUDIO_BLOCK) != 0u) {
+        prg32_audio_block_header_t audio;
+        if (image_size + sizeof(audio) > part->size ||
+            esp_partition_read(part, image_size, &audio, sizeof(audio)) != ESP_OK ||
+            memcmp(audio.magic, PRG32_AUDIO_BLOCK_MAGIC, 4) != 0 ||
+            audio.block_size < sizeof(audio) ||
+            image_size + audio.block_size > part->size) {
+            set_error("stored cartridge AUDIO block is invalid");
+            return -1;
+        }
+        image_size += audio.block_size;
+    }
     uint8_t *image = malloc(image_size);
     if (!image) {
         set_error("out of memory reading cartridge");
@@ -328,6 +376,8 @@ int prg32_cart_get_info(prg32_cart_info_t *info) {
         snprintf(info->name, sizeof(info->name), "%s", g_header.name);
         info->code_size = g_header.code_size;
         info->mem_size = g_header.mem_size;
+        info->audio_size = g_audio_size;
+        info->audio = g_audio_size > 0 ? 1 : 0;
     }
     info->load_addr = (uint32_t)(uintptr_t)prg32_cart_exec;
     info->generation = g_generation;

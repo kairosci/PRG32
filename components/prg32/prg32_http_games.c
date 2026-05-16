@@ -52,6 +52,8 @@ static esp_err_t send_runtime(httpd_req_t *req) {
         cJSON_AddBoolToObject(cart, "stored", info.stored != 0);
         add_json_u32(cart, "code_size", info.code_size);
         add_json_u32(cart, "mem_size", info.mem_size);
+        add_json_u32(cart, "audio_size", info.audio_size);
+        cJSON_AddBoolToObject(cart, "audio", info.audio != 0);
         add_json_u32(cart, "generation", info.generation);
         cJSON_AddBoolToObject(root, "cart_loaded", info.loaded != 0);
     }
@@ -73,6 +75,32 @@ static esp_err_t send_runtime(httpd_req_t *req) {
                (uintptr_t)prg32_audio_play_notes);
     add_import(imports, "prg32_audio_sample_u8",
                (uintptr_t)prg32_audio_sample_u8);
+    add_import(imports, "prg32_audio_init", (uintptr_t)prg32_audio_init);
+    add_import(imports, "prg32_audio_shutdown", (uintptr_t)prg32_audio_shutdown);
+    add_import(imports, "prg32_audio_get_mode", (uintptr_t)prg32_audio_get_mode);
+    add_import(imports, "prg32_audio_play_sample",
+               (uintptr_t)prg32_audio_play_sample);
+    add_import(imports, "prg32_audio_play_sample_pan",
+               (uintptr_t)prg32_audio_play_sample_pan);
+    add_import(imports, "prg32_audio_stop_channel",
+               (uintptr_t)prg32_audio_stop_channel);
+    add_import(imports, "prg32_audio_stop_all", (uintptr_t)prg32_audio_stop_all);
+    add_import(imports, "prg32_audio_note_on", (uintptr_t)prg32_audio_note_on);
+    add_import(imports, "prg32_audio_note_on_pan",
+               (uintptr_t)prg32_audio_note_on_pan);
+    add_import(imports, "prg32_audio_note_off", (uintptr_t)prg32_audio_note_off);
+    add_import(imports, "prg32_audio_play_track",
+               (uintptr_t)prg32_audio_play_track);
+    add_import(imports, "prg32_audio_stop_track",
+               (uintptr_t)prg32_audio_stop_track);
+    add_import(imports, "prg32_audio_set_tempo",
+               (uintptr_t)prg32_audio_set_tempo);
+    add_import(imports, "prg32_audio_set_master_volume",
+               (uintptr_t)prg32_audio_set_master_volume);
+    add_import(imports, "prg32_audio_set_channel_volume",
+               (uintptr_t)prg32_audio_set_channel_volume);
+    add_import(imports, "prg32_audio_set_channel_pan",
+               (uintptr_t)prg32_audio_set_channel_pan);
     add_import(imports, "prg32_wifi_start_mode",
                (uintptr_t)prg32_wifi_start_mode);
     add_import(imports, "prg32_wifi_current_mode",
@@ -90,6 +118,10 @@ static esp_err_t send_runtime(httpd_req_t *req) {
     add_import(imports, "prg32_gfx_pixel", (uintptr_t)prg32_gfx_pixel);
     add_import(imports, "prg32_gfx_rect", (uintptr_t)prg32_gfx_rect);
     add_import(imports, "prg32_gfx_text8", (uintptr_t)prg32_gfx_text8);
+    add_import(imports, "prg32_splash_draw", (uintptr_t)prg32_splash_draw);
+    add_import(imports, "prg32_splash_show", (uintptr_t)prg32_splash_show);
+    add_import(imports, "prg32_splash_show_default",
+               (uintptr_t)prg32_splash_show_default);
     add_import(imports, "prg32_debug_overlay_draw", (uintptr_t)prg32_debug_overlay_draw);
     add_import(imports, "prg32_keyboard_init", (uintptr_t)prg32_keyboard_init);
     add_import(imports, "prg32_keyboard_update", (uintptr_t)prg32_keyboard_update);
@@ -177,6 +209,8 @@ static esp_err_t get_games(httpd_req_t *req) {
     cJSON_AddBoolToObject(cart, "stored", info.stored != 0);
     add_json_u32(cart, "code_size", info.code_size);
     add_json_u32(cart, "mem_size", info.mem_size);
+    add_json_u32(cart, "audio_size", info.audio_size);
+    cJSON_AddBoolToObject(cart, "audio", info.audio != 0);
     add_json_u32(cart, "generation", info.generation);
     cJSON_AddItemToArray(root, cart);
 

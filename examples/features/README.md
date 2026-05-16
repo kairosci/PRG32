@@ -8,6 +8,7 @@ them when teaching one graphics concept at a time.
 | Scrolling/parallax | `scrolling_parallax/demo.S` | `scrolling_parallax/c/demo.c` | `scrolling_parallax` / `_c` | scroll and parallax |
 | Animated sprites | `animated_sprites/demo.S` | `animated_sprites/c/demo.c` | `animated_sprites` / `_c` | sprite frames |
 | Dual playfield | `dual_playfield/demo.S` | `dual_playfield/c/demo.c` | `dual_playfield` / `_c` | background plus foreground |
+| Splash screen | `splash_screen/demo.S` | `splash_screen/c/demo.c` | `splash_screen` / `_c` | startup and game title splash |
 | Joystick keyboard | - | `keyboard_input/c/demo.c` | `keyboard_input_c` | alphanumeric text input |
 | Wi-Fi setup | - | `wifi_setup/c/demo.c` | `wifi_setup_c` | setup mode and AP/STA choice |
 | Audio synth | - | `audio_synth/c/demo.c` | `audio_synth_c` | notes and samples |

@@ -1,0 +1,14 @@
+{
+  "tracks": [
+    {
+      "name": "stereo_music_demo",
+      "events": [
+        {"delta": 0, "command": "NOTE_ON", "arg0": 0, "arg1": 60},
+        {"delta": 4, "command": "NOTE_OFF", "arg0": 0, "arg1": 0},
+        {"delta": 0, "command": "NOTE_ON", "arg0": 0, "arg1": 67},
+        {"delta": 4, "command": "NOTE_OFF", "arg0": 0, "arg1": 0},
+        {"delta": 0, "command": "JUMP", "arg0": 0, "arg1": 0}
+      ]
+    }
+  ]
+}

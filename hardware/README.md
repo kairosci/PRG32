@@ -8,11 +8,14 @@
 - optional second 5-way digital joystick module for player 2 games such as Pong
 - one setup button, or use the joystick push switch when the wiring allows it
 - Passive buzzer
+- one MAX98357A I2S DAC/amplifier breakout and one 4-8 ohm speaker for mono
+  PRG32 audio
+- optional second MAX98357A and speaker for stereo PRG32 Audio Plus
 - Jumper wires and breadboard
 
 Desktop QEMU can emulate the PRG32 graphics viewport for early software tests,
 but it does not replace this hardware validation. Use the physical board for
-LCD wiring, GPIO buttons, buzzer output, and controller bridge wiring.
+LCD wiring, GPIO buttons, buzzer/I2S output, and controller bridge wiring.
 
 The resident firmware also starts the `PRG32` Wi-Fi AP for cartridge uploads.
 Keep the antenna area of the ESP32-C6 module clear in the enclosure.
@@ -56,6 +59,30 @@ CH559/CH554, or a PC-side serial helper during labs.
 | GPIO8 | P1 optional B/back button to GND |
 | GPIO14 | Setup button to GND |
 | GPIO9 | Passive buzzer |
+
+## MAX98357A audio wiring
+
+Mono audio uses one MAX98357A:
+
+| ESP32-C6 signal | MAX98357A |
+|---|---|
+| 3V3 or 5V | VIN |
+| GND | GND |
+| GPIO4 default | BCLK |
+| GPIO5 default | LRC / WS |
+| GPIO6 default | DIN |
+| GPIO7 default, optional | SD |
+
+Stereo uses two MAX98357A boards. Both share BCLK, LRC/WS, DIN, power, and
+ground. Configure one board for left-channel output and the other for
+right-channel output using the breakout-specific jumper or mode pin.
+
+The default audio GPIOs are Kconfig defaults for the audio examples. If a
+classroom kit also uses those pins for display or joystick wiring, choose
+non-conflicting audio pins in menuconfig before flashing.
+
+Do not connect MAX98357A speaker outputs directly to headphones or line-level
+inputs. Use 4-8 ohm speakers.
 
 The previous six-tactile-button layout is replaced by a digital joystick module
 such as the user-provided reference part:

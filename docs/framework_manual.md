@@ -85,6 +85,25 @@ When the QEMU backend is selected, `main/prg32_config.h` disables physical GPIO
 buttons, the buzzer, and the UART controller bridge. This keeps desktop screen
 tests focused on rendering and GDB exercises.
 
+## Splash Screens
+
+The resident firmware shows a short PRG32 splash after display initialization.
+It can be disabled or timed through Kconfig:
+
+- `CONFIG_PRG32_SPLASH_ENABLED`
+- `CONFIG_PRG32_SPLASH_DURATION_MS`
+
+Graphic games can reuse the same helper API:
+
+- `prg32_splash_show(title, subtitle, duration_ms, bg, fg, accent)`: draw,
+  present, and wait.
+- `prg32_splash_draw(title, subtitle, bg, fg, accent)`: draw a splash/title
+  screen without delaying, useful inside a game state.
+- `prg32_splash_show_default()`: show the firmware-style PRG32 splash.
+
+Assembly programs pass C strings in `a0` and `a1`, duration in `a2`, and RGB565
+colors in `a3` to `a5`.
+
 ## Cartridge runtime
 
 The resident firmware includes a cartridge loader so games can be replaced
@@ -231,15 +250,34 @@ usable from assembly without requiring a C object.
 
 ## Audio
 
-`prg32_audio_beep(hz, ms)` uses PWM to drive a passive buzzer.
+PRG32 has two audio layers.
 
-Additional audio helpers:
+The legacy teaching helpers still use PWM to drive a passive buzzer:
 
+- `prg32_audio_beep(hz, ms)`
 - `prg32_audio_tone(hz, ms, duty)`: PWM tone with explicit duty cycle.
 - `prg32_audio_note(midi_note, ms)`: MIDI-like note number to tone.
 - `prg32_audio_play_notes(notes, count)`: blocking sequence of notes/rests.
 - `prg32_audio_sample_u8(samples, count, rate)`: play unsigned 8-bit samples
   through PWM.
 
-The sample player is intentionally simple and classroom-visible. It is useful
-for short effects, not high-fidelity music playback.
+The I2S audio runtime lives in the `prg32_audio` component and targets
+MAX98357A DAC/amplifier boards:
+
+- mono mode: one MAX98357A, default, 22050 Hz, 6 voices
+- stereo mode: two MAX98357A boards, optional PRG32 Audio Plus, panned voices
+
+Useful calls:
+
+- `prg32_audio_init(config)`: start the I2S mixer runtime.
+- `prg32_audio_get_mode()`: return mono or stereo.
+- `prg32_audio_register_sample(...)`: register unsigned 8-bit PCM.
+- `prg32_audio_play_sample(sample_id, volume, pitch)`: trigger a sample.
+- `prg32_audio_play_sample_pan(sample_id, volume, pitch, pan)`: trigger with pan.
+- `prg32_audio_note_on(channel, instrument, note, volume)`: start a pitched note.
+- `prg32_audio_play_track(track_id)`: start tracker event playback.
+
+Pitch `1024` means natural sample speed. Volumes use `0..255`. Pan uses
+`-64..+63`; mono mode accepts pan calls but outputs mono.
+
+See `docs/audio.md` for wiring, examples, and the cartridge AUDIO block format.

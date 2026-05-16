@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include "prg32_audio.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -73,6 +74,7 @@ extern "C" {
 #define PRG32_CART_MAGIC "PRG2"
 #define PRG32_CART_ABI_MAJOR 1
 #define PRG32_CART_ABI_MINOR 0
+#define PRG32_CART_FLAG_AUDIO_BLOCK (1u << 0)
 #define PRG32_CART_RAM_SIZE (32u * 1024u)
 #define PRG32_CART_NAME_LEN 32
 #ifndef PRG32_FIRMWARE_VERSION
@@ -100,9 +102,11 @@ typedef struct {
     uint32_t load_addr;
     uint32_t code_size;
     uint32_t mem_size;
+    uint32_t audio_size;
     uint32_t generation;
     uint8_t loaded;
     uint8_t stored;
+    uint8_t audio;
 } prg32_cart_info_t;
 
 typedef struct {
@@ -217,6 +221,18 @@ void prg32_gfx_present(void);
 void prg32_gfx_pixel(int x, int y, uint16_t color);
 void prg32_gfx_rect(int x, int y, int w, int h, uint16_t color);
 void prg32_gfx_text8(int x, int y, const char *s, uint16_t fg, uint16_t bg);
+void prg32_splash_draw(const char *title,
+                       const char *subtitle,
+                       uint16_t bg,
+                       uint16_t fg,
+                       uint16_t accent);
+void prg32_splash_show(const char *title,
+                       const char *subtitle,
+                       uint32_t duration_ms,
+                       uint16_t bg,
+                       uint16_t fg,
+                       uint16_t accent);
+void prg32_splash_show_default(void);
 void prg32_debug_overlay_draw(int enabled,
                               int x,
                               int y,
