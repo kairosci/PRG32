@@ -215,6 +215,25 @@ POST /api/games/select?slot=cart0
 
 Reloads the stored cartridge in the selected slot.
 
+### Screenshot
+
+```http
+GET /api/screenshot.bmp
+```
+
+Returns the current 320x240 PRG32 framebuffer as a 24-bit BMP image. This
+captures the full physical screen, including splash/setup screens, the centered
+320x200 game viewport, and the upper/lower status bands.
+
+Example:
+
+```bash
+curl http://192.168.4.1/api/screenshot.bmp --output screenshot.bmp
+```
+
+The BMP is generated from the same normalized RGB565 framebuffer path used by
+the ILI9341 hardware backend and the QEMU RGB backend.
+
 ## Cartridge Assembly Rules
 
 The existing graphics examples already follow the right shape:

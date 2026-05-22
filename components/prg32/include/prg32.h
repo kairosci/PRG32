@@ -277,6 +277,7 @@ void prg32_band_save_config(void);
 void prg32_gfx_pixel(int x, int y, uint16_t color);
 void prg32_gfx_rect(int x, int y, int w, int h, uint16_t color);
 void prg32_gfx_text8(int x, int y, const char *s, uint16_t fg, uint16_t bg);
+int prg32_gfx_snapshot_row_rgb565(int y, uint16_t *out, size_t pixels);
 void prg32_splash_draw(const char *title,
                        const char *subtitle,
                        uint16_t bg,

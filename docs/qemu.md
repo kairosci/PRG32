@@ -120,6 +120,11 @@ for the ESP32-C3 emulator target.
 
 The physical firmware still uses the ILI9341 backend by default.
 
+The QEMU display backend exposes the same normalized framebuffer snapshot helper
+used by the physical ILI9341 backend. The resident HTTP endpoint
+`/api/screenshot.bmp` therefore produces the same 320x240 BMP format whenever
+the firmware HTTP server is reachable in the chosen run configuration.
+
 ## Cartridges in QEMU
 
 QEMU uses the same uploadable `.prg32` game package as the real board, but QEMU

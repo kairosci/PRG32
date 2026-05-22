@@ -972,6 +972,16 @@ void prg32_gfx_text8(int x, int y, const char *s, uint16_t fg, uint16_t bg) {
     }
 }
 
+int prg32_gfx_snapshot_row_rgb565(int y, uint16_t *out, size_t pixels) {
+    if (!out || pixels < PRG32_LCD_W || (unsigned)y >= PRG32_LCD_H) {
+        return -1;
+    }
+    for (int x = 0; x < PRG32_LCD_W; ++x) {
+        out[x] = rgb565_wire(g_fb[y * PRG32_LCD_W + x]);
+    }
+    return PRG32_LCD_W;
+}
+
 void prg32_gfx_present(void) {
     if (!g_lcd_ready) {
         return;

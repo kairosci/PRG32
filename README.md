@@ -252,9 +252,11 @@ The C programming tutorial is [docs/tutorial_c_game.md](docs/tutorial_c_game.md)
 
 - Runtime/diagnostics: `GET /api/runtime`
 - Games: `GET /api/games`, `POST /api/games?slot=cart0`, `POST /api/games/select?slot=cart0`
+- Screenshot: `GET /api/screenshot.bmp`
 - Optional scores: `GET /api/scores`, `POST /api/scores`
 
 `/api/runtime` includes firmware version, cartridge state, frame count, and last input state.
+`/api/screenshot.bmp` returns the current 320x240 framebuffer as a BMP image.
 
 ## Asset Tools
 

@@ -80,6 +80,7 @@ static const prg32_any_fn_t g_prg32_cart_abi_exports[] = {
     (prg32_any_fn_t)prg32_gfx_pixel,
     (prg32_any_fn_t)prg32_gfx_rect,
     (prg32_any_fn_t)prg32_gfx_text8,
+    (prg32_any_fn_t)prg32_gfx_snapshot_row_rgb565,
     (prg32_any_fn_t)prg32_splash_draw,
     (prg32_any_fn_t)prg32_splash_show,
     (prg32_any_fn_t)prg32_splash_draw_game,

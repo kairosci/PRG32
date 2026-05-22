@@ -110,6 +110,7 @@ Splash helpers are exported for cartridges and examples:
 | `prg32_gfx_fullscreen_enabled` | return whether full-screen drawing is active |
 | `prg32_gfx_set_band_color` | set a custom top/bottom band color for games |
 | `prg32_gfx_use_background_bands` | make game bands follow `prg32_gfx_clear` again |
+| `prg32_gfx_snapshot_row_rgb565` | copy a physical framebuffer row as RGB565 |
 | `prg32_band_set_mode` | choose what status data a band renders |
 | `prg32_band_mode` | read the current mode for a band |
 | `prg32_band_set_text` | set custom band text |

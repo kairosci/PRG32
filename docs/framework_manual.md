@@ -136,6 +136,9 @@ Framework-owned full-screen splash helpers remain available:
   bands.
 - `prg32_gfx_use_background_bands()`: return to automatic background-colored
   bands.
+- `prg32_gfx_snapshot_row_rgb565(y, out, pixels)`: copy one physical 320-pixel
+  framebuffer row as normal RGB565. The HTTP screenshot API uses this helper for
+  both ILI9341 hardware and QEMU.
 
 Assembly programs pass C strings in `a0` and `a1`, duration in `a2`, and RGB565
 colors in `a3` to `a5`.
@@ -159,6 +162,19 @@ Available modes are `PRG32_BAND_MODE_NONE`, `PRG32_BAND_MODE_FPS`,
 `PRG32_BAND_MODE_DEBUG`, and `PRG32_BAND_MODE_CUSTOM`. The setup developer
 menu lets a trainer choose what appears in the top and bottom bands and stores
 that choice in NVS.
+
+## Screenshot API
+
+When the resident HTTP server is reachable, `GET /api/screenshot.bmp` streams
+the current full 320x240 framebuffer as a 24-bit BMP. It is intended for lab
+reports, debugging display output, and comparing hardware with QEMU rendering:
+
+```bash
+curl http://192.168.4.1/api/screenshot.bmp --output screenshot.bmp
+```
+
+The encoder streams one row at a time, so it avoids allocating a complete BMP in
+ESP32 RAM.
 
 ## Cartridge runtime
 

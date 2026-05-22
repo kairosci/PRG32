@@ -166,6 +166,8 @@ static esp_err_t send_runtime(httpd_req_t *req) {
     add_import(imports, "prg32_gfx_pixel", (uintptr_t)prg32_gfx_pixel);
     add_import(imports, "prg32_gfx_rect", (uintptr_t)prg32_gfx_rect);
     add_import(imports, "prg32_gfx_text8", (uintptr_t)prg32_gfx_text8);
+    add_import(imports, "prg32_gfx_snapshot_row_rgb565",
+               (uintptr_t)prg32_gfx_snapshot_row_rgb565);
     add_import(imports, "prg32_splash_draw", (uintptr_t)prg32_splash_draw);
     add_import(imports, "prg32_splash_show", (uintptr_t)prg32_splash_show);
     add_import(imports, "prg32_splash_draw_game",
@@ -296,6 +298,78 @@ static uint8_t request_slot(httpd_req_t *req) {
     return 0;
 }
 
+static void put_le16(uint8_t *dst, uint16_t value) {
+    dst[0] = (uint8_t)value;
+    dst[1] = (uint8_t)(value >> 8);
+}
+
+static void put_le32(uint8_t *dst, uint32_t value) {
+    dst[0] = (uint8_t)value;
+    dst[1] = (uint8_t)(value >> 8);
+    dst[2] = (uint8_t)(value >> 16);
+    dst[3] = (uint8_t)(value >> 24);
+}
+
+static void rgb565_to_bgr888(uint16_t color, uint8_t *bgr) {
+    uint8_t r5 = (uint8_t)((color >> 11) & 0x1f);
+    uint8_t g6 = (uint8_t)((color >> 5) & 0x3f);
+    uint8_t b5 = (uint8_t)(color & 0x1f);
+    bgr[0] = (uint8_t)((b5 << 3) | (b5 >> 2));
+    bgr[1] = (uint8_t)((g6 << 2) | (g6 >> 4));
+    bgr[2] = (uint8_t)((r5 << 3) | (r5 >> 2));
+}
+
+static esp_err_t get_screenshot_bmp(httpd_req_t *req) {
+    enum {
+        BMP_HEADER_SIZE = 54,
+        BMP_BPP = 24,
+        BMP_ROW_SIZE = ((PRG32_LCD_W * 3 + 3) & ~3),
+        BMP_IMAGE_SIZE = BMP_ROW_SIZE * PRG32_LCD_H,
+        BMP_FILE_SIZE = BMP_HEADER_SIZE + BMP_IMAGE_SIZE,
+    };
+    uint8_t header[BMP_HEADER_SIZE] = {0};
+    uint16_t rgb[PRG32_LCD_W];
+    uint8_t row[BMP_ROW_SIZE];
+
+    header[0] = 'B';
+    header[1] = 'M';
+    put_le32(&header[2], BMP_FILE_SIZE);
+    put_le32(&header[10], BMP_HEADER_SIZE);
+    put_le32(&header[14], 40);
+    put_le32(&header[18], PRG32_LCD_W);
+    put_le32(&header[22], PRG32_LCD_H);
+    put_le16(&header[26], 1);
+    put_le16(&header[28], BMP_BPP);
+    put_le32(&header[34], BMP_IMAGE_SIZE);
+    put_le32(&header[38], 2835);
+    put_le32(&header[42], 2835);
+
+    prg32_gfx_present();
+
+    httpd_resp_set_type(req, "image/bmp");
+    httpd_resp_set_hdr(req, "Content-Disposition", "inline; filename=\"screenshot.bmp\"");
+    httpd_resp_set_hdr(req, "Cache-Control", "no-store");
+
+    esp_err_t err = httpd_resp_send_chunk(req, (const char *)header, sizeof(header));
+    if (err != ESP_OK) {
+        return err;
+    }
+    for (int y = PRG32_LCD_H - 1; y >= 0; --y) {
+        if (prg32_gfx_snapshot_row_rgb565(y, rgb, PRG32_LCD_W) < 0) {
+            httpd_resp_sendstr_chunk(req, NULL);
+            return ESP_FAIL;
+        }
+        for (int x = 0; x < PRG32_LCD_W; ++x) {
+            rgb565_to_bgr888(rgb[x], &row[x * 3]);
+        }
+        err = httpd_resp_send_chunk(req, (const char *)row, BMP_ROW_SIZE);
+        if (err != ESP_OK) {
+            return err;
+        }
+    }
+    return httpd_resp_sendstr_chunk(req, NULL);
+}
+
 static esp_err_t post_game(httpd_req_t *req) {
 #if PRG32_GAME_UPLOAD_ENABLE
     if (req->content_len <= 0 ||
@@ -373,7 +447,7 @@ void prg32_scores_api_start(void) {
         return;
     }
     httpd_config_t cfg = HTTPD_DEFAULT_CONFIG();
-    cfg.max_uri_handlers = 8;
+    cfg.max_uri_handlers = 10;
     cfg.recv_wait_timeout = 10;
     esp_err_t err = httpd_start(&server, &cfg);
     if (err != ESP_OK) {
@@ -401,10 +475,16 @@ void prg32_scores_api_start(void) {
         .method = HTTP_POST,
         .handler = select_game
     };
+    httpd_uri_t screenshot = {
+        .uri = "/api/screenshot.bmp",
+        .method = HTTP_GET,
+        .handler = get_screenshot_bmp
+    };
     ESP_ERROR_CHECK(httpd_register_uri_handler(server, &rt));
     ESP_ERROR_CHECK(httpd_register_uri_handler(server, &games_get));
     ESP_ERROR_CHECK(httpd_register_uri_handler(server, &games_post));
     ESP_ERROR_CHECK(httpd_register_uri_handler(server, &games_select));
+    ESP_ERROR_CHECK(httpd_register_uri_handler(server, &screenshot));
 
     prg32_http_register_score_handlers(server);
 }
