@@ -106,6 +106,8 @@ Splash helpers are exported for cartridges and examples:
 | `prg32_splash_draw` | draw a full 320x240 framework splash/title screen without delaying |
 | `prg32_splash_show` | draw a full 320x240 framework splash, present, and wait |
 | `prg32_splash_show_default` | show the built-in PRG32 startup splash |
+| `prg32_gfx_lock` | enter the recursive graphics critical section |
+| `prg32_gfx_unlock` | leave the recursive graphics critical section |
 | `prg32_gfx_set_fullscreen` | use 320x240 coordinates for framework/title screens |
 | `prg32_gfx_fullscreen_enabled` | return whether full-screen drawing is active |
 | `prg32_gfx_set_band_color` | set a custom top/bottom band color for games |

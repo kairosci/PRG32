@@ -1615,6 +1615,7 @@ void prg32_device_demo_run(void) {
             next_frame_ms = prg32_ticks_ms();
         }
 
+        prg32_gfx_lock();
         switch (page) {
             case 0: draw_overview(frame); break;
             case 1: draw_graphics(frame); break;
@@ -1640,6 +1641,7 @@ void prg32_device_demo_run(void) {
                  (unsigned long)input);
         prg32_band_set_text(PRG32_BAND_BOTTOM, band);
         prg32_gfx_present();
+        prg32_gfx_unlock();
         last = input;
         frame++;
         wait_for_frame_target(&next_frame_ms);

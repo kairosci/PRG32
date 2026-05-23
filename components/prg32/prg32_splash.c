@@ -271,8 +271,10 @@ void prg32_splash_show(const char *title,
                        uint16_t fg,
                        uint16_t accent) {
     int was_fullscreen = prg32_gfx_fullscreen_enabled();
+    prg32_gfx_lock();
     prg32_splash_draw(title, subtitle, bg, fg, accent);
     prg32_gfx_present();
+    prg32_gfx_unlock();
     if (duration_ms > 0) {
         vTaskDelay(pdMS_TO_TICKS(duration_ms));
     }
@@ -318,8 +320,10 @@ void prg32_splash_show_game(const char *title,
                             uint16_t fg,
                             uint16_t accent) {
     int was_fullscreen = prg32_gfx_fullscreen_enabled();
+    prg32_gfx_lock();
     prg32_splash_draw_game(title, subtitle, bg, fg, accent);
     prg32_gfx_present();
+    prg32_gfx_unlock();
     if (duration_ms > 0) {
         vTaskDelay(pdMS_TO_TICKS(duration_ms));
     }
@@ -329,8 +333,10 @@ void prg32_splash_show_game(const char *title,
 void prg32_splash_show_default(void) {
 #if CONFIG_PRG32_SPLASH_ENABLED
     int was_fullscreen = prg32_gfx_fullscreen_enabled();
+    prg32_gfx_lock();
     prg32_splash_draw_logo();
     prg32_gfx_present();
+    prg32_gfx_unlock();
     prg32_splash_play_welcome(CONFIG_PRG32_SPLASH_DURATION_MS);
     prg32_gfx_set_fullscreen(was_fullscreen);
 #endif

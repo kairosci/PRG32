@@ -136,6 +136,8 @@ Framework-owned full-screen splash helpers remain available:
   bands.
 - `prg32_gfx_use_background_bands()`: return to automatic background-colored
   bands.
+- `prg32_gfx_lock()` / `prg32_gfx_unlock()`: optional recursive graphics lock
+  for advanced code that must update several draw calls atomically.
 - `prg32_gfx_snapshot_row_rgb565(y, out, pixels)`: copy one physical 320-pixel
   framebuffer row as normal RGB565. The HTTP screenshot API uses this helper for
   both ILI9341 hardware and QEMU.
@@ -173,8 +175,9 @@ reports, debugging display output, and comparing hardware with QEMU rendering:
 curl http://192.168.4.1/api/screenshot.bmp --output screenshot.bmp
 ```
 
-The encoder streams one row at a time, so it avoids allocating a complete BMP in
-ESP32 RAM.
+The encoder holds the recursive graphics lock while it streams rows. This keeps
+the BMP internally consistent without allocating a complete second framebuffer
+in ESP32 RAM.
 
 ## Cartridge runtime
 

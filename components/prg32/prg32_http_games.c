@@ -140,6 +140,8 @@ static esp_err_t send_runtime(httpd_req_t *req) {
     add_import(imports, "prg32_console_hex32", (uintptr_t)prg32_console_hex32);
     add_import(imports, "prg32_gfx_clear", (uintptr_t)prg32_gfx_clear);
     add_import(imports, "prg32_gfx_present", (uintptr_t)prg32_gfx_present);
+    add_import(imports, "prg32_gfx_lock", (uintptr_t)prg32_gfx_lock);
+    add_import(imports, "prg32_gfx_unlock", (uintptr_t)prg32_gfx_unlock);
     add_import(imports, "prg32_gfx_set_fullscreen",
                (uintptr_t)prg32_gfx_set_fullscreen);
     add_import(imports, "prg32_gfx_fullscreen_enabled",
@@ -330,6 +332,7 @@ static esp_err_t get_screenshot_bmp(httpd_req_t *req) {
     uint8_t header[BMP_HEADER_SIZE] = {0};
     uint16_t rgb[PRG32_LCD_W];
     uint8_t row[BMP_ROW_SIZE];
+    esp_err_t err;
 
     header[0] = 'B';
     header[1] = 'M';
@@ -344,30 +347,36 @@ static esp_err_t get_screenshot_bmp(httpd_req_t *req) {
     put_le32(&header[38], 2835);
     put_le32(&header[42], 2835);
 
+    prg32_gfx_lock();
     prg32_gfx_present();
 
     httpd_resp_set_type(req, "image/bmp");
     httpd_resp_set_hdr(req, "Content-Disposition", "inline; filename=\"screenshot.bmp\"");
     httpd_resp_set_hdr(req, "Cache-Control", "no-store");
 
-    esp_err_t err = httpd_resp_send_chunk(req, (const char *)header, sizeof(header));
+    err = httpd_resp_send_chunk(req, (const char *)header, sizeof(header));
     if (err != ESP_OK) {
-        return err;
+        goto out;
     }
     for (int y = PRG32_LCD_H - 1; y >= 0; --y) {
         if (prg32_gfx_snapshot_row_rgb565(y, rgb, PRG32_LCD_W) < 0) {
             httpd_resp_sendstr_chunk(req, NULL);
-            return ESP_FAIL;
+            err = ESP_FAIL;
+            goto out;
         }
         for (int x = 0; x < PRG32_LCD_W; ++x) {
             rgb565_to_bgr888(rgb[x], &row[x * 3]);
         }
         err = httpd_resp_send_chunk(req, (const char *)row, BMP_ROW_SIZE);
         if (err != ESP_OK) {
-            return err;
+            goto out;
         }
     }
-    return httpd_resp_sendstr_chunk(req, NULL);
+    err = httpd_resp_sendstr_chunk(req, NULL);
+
+out:
+    prg32_gfx_unlock();
+    return err;
 }
 
 static esp_err_t post_game(httpd_req_t *req) {

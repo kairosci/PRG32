@@ -260,6 +260,8 @@ void prg32_console_hex32(uint32_t value);
 
 void prg32_gfx_clear(uint16_t color);
 void prg32_gfx_present(void);
+void prg32_gfx_lock(void);
+void prg32_gfx_unlock(void);
 void prg32_gfx_set_fullscreen(int enabled);
 int prg32_gfx_fullscreen_enabled(void);
 void prg32_gfx_set_band_color(uint16_t color);

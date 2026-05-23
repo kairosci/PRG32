@@ -65,6 +65,7 @@ int prg32_band_visible(uint8_t band);
 uint16_t prg32_band_fg(uint8_t band);
 uint16_t prg32_band_bg(uint8_t band, uint16_t fallback);
 const char *prg32_band_render_text(uint8_t band, uint32_t now_ms);
+void prg32_gfx_lock_init(void);
 
 static esp_err_t lcd_prepare_output_pin(int pin, const char *name) {
     if (pin < 0) {
@@ -739,6 +740,7 @@ static void lcd_boot_test_pattern(void) {
 }
 
 void prg32_display_init(void) {
+    prg32_gfx_lock_init();
 #if !PRG32_LCD_SOFT_SPI
     spi_bus_config_t bus = {
         .mosi_io_num = PRG32_PIN_LCD_MOSI,
@@ -842,19 +844,25 @@ uint32_t prg32_ticks_ms(void) {
 }
 
 void prg32_gfx_set_fullscreen(int enabled) {
+    prg32_gfx_lock();
     g_fullscreen = enabled ? 1 : 0;
     if (g_fullscreen) {
         g_band_area_valid = 0;
         g_band_cache_valid[PRG32_BAND_TOP] = 0;
         g_band_cache_valid[PRG32_BAND_BOTTOM] = 0;
     }
+    prg32_gfx_unlock();
 }
 
 int prg32_gfx_fullscreen_enabled(void) {
-    return g_fullscreen;
+    prg32_gfx_lock();
+    int enabled = g_fullscreen;
+    prg32_gfx_unlock();
+    return enabled;
 }
 
 void prg32_gfx_set_band_color(uint16_t color) {
+    prg32_gfx_lock();
     g_band_color = color;
     g_last_band_color = color;
     g_band_color_set = 1;
@@ -877,15 +885,19 @@ void prg32_gfx_set_band_color(uint16_t color) {
                       PRG32_LCD_W,
                       PRG32_VIEWPORT_Y);
     }
+    prg32_gfx_unlock();
 }
 
 void prg32_gfx_use_background_bands(void) {
+    prg32_gfx_lock();
     g_band_color_set = 0;
     g_band_cache_valid[PRG32_BAND_TOP] = 0;
     g_band_cache_valid[PRG32_BAND_BOTTOM] = 0;
+    prg32_gfx_unlock();
 }
 
 void prg32_gfx_clear(uint16_t color) {
+    prg32_gfx_lock();
     if (g_fullscreen) {
         g_last_band_color = color;
         g_band_area_valid = 0;
@@ -893,6 +905,7 @@ void prg32_gfx_clear(uint16_t color) {
             g_fb[i] = fb_color(color);
         }
         dirty_add_raw(0, 0, PRG32_LCD_W, PRG32_LCD_H);
+        prg32_gfx_unlock();
         return;
     }
 
@@ -910,19 +923,25 @@ void prg32_gfx_clear(uint16_t color) {
         g_band_cache_valid[PRG32_BAND_BOTTOM] = 0;
     }
     fill_raw_rect(0, PRG32_VIEWPORT_Y, PRG32_GAME_W, PRG32_GAME_H, color);
+    prg32_gfx_unlock();
 }
 
 void prg32_gfx_pixel(int x, int y, uint16_t color) {
+    prg32_gfx_lock();
     if ((unsigned)x >= PRG32_GAME_W || (unsigned)y >= (unsigned)logical_h()) {
+        prg32_gfx_unlock();
         return;
     }
     int raw_y = logical_y_to_raw(y);
     g_fb[raw_y * PRG32_LCD_W + x] = fb_color(color);
     dirty_add(x, y, 1, 1);
+    prg32_gfx_unlock();
 }
 
 void prg32_gfx_rect(int x, int y, int w, int h, uint16_t color) {
+    prg32_gfx_lock();
     if (w <= 0 || h <= 0) {
+        prg32_gfx_unlock();
         return;
     }
     int x0 = x;
@@ -934,6 +953,7 @@ void prg32_gfx_rect(int x, int y, int w, int h, uint16_t color) {
     if (x1 > PRG32_GAME_W) x1 = PRG32_GAME_W;
     if (y1 > logical_h()) y1 = logical_h();
     if (x0 >= x1 || y0 >= y1) {
+        prg32_gfx_unlock();
         return;
     }
     for (int py = y0; py < y1; ++py) {
@@ -943,10 +963,13 @@ void prg32_gfx_rect(int x, int y, int w, int h, uint16_t color) {
         }
     }
     dirty_add(x0, y0, x1 - x0, y1 - y0);
+    prg32_gfx_unlock();
 }
 
 void prg32_gfx_text8(int x, int y, const char *s, uint16_t fg, uint16_t bg) {
+    prg32_gfx_lock();
     if (!s) {
+        prg32_gfx_unlock();
         return;
     }
     while (*s) {
@@ -970,25 +993,32 @@ void prg32_gfx_text8(int x, int y, const char *s, uint16_t fg, uint16_t bg) {
         dirty_add(x, y, 8, 8);
         x += 8;
     }
+    prg32_gfx_unlock();
 }
 
 int prg32_gfx_snapshot_row_rgb565(int y, uint16_t *out, size_t pixels) {
+    prg32_gfx_lock();
     if (!out || pixels < PRG32_LCD_W || (unsigned)y >= PRG32_LCD_H) {
+        prg32_gfx_unlock();
         return -1;
     }
     for (int x = 0; x < PRG32_LCD_W; ++x) {
         out[x] = rgb565_wire(g_fb[y * PRG32_LCD_W + x]);
     }
+    prg32_gfx_unlock();
     return PRG32_LCD_W;
 }
 
 void prg32_gfx_present(void) {
+    prg32_gfx_lock();
     if (!g_lcd_ready) {
+        prg32_gfx_unlock();
         return;
     }
     draw_band_overlays();
     if (g_dirty_x1 < g_dirty_x0) {
         prg32_band_note_frame(prg32_ticks_ms());
+        prg32_gfx_unlock();
         return;
     }
     int x0 = g_dirty_x0;
@@ -1020,4 +1050,5 @@ void prg32_gfx_present(void) {
     }
     dirty_reset();
     prg32_band_note_frame(prg32_ticks_ms());
+    prg32_gfx_unlock();
 }

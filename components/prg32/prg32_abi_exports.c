@@ -63,6 +63,8 @@ static const prg32_any_fn_t g_prg32_cart_abi_exports[] = {
     (prg32_any_fn_t)prg32_console_hex32,
     (prg32_any_fn_t)prg32_gfx_clear,
     (prg32_any_fn_t)prg32_gfx_present,
+    (prg32_any_fn_t)prg32_gfx_lock,
+    (prg32_any_fn_t)prg32_gfx_unlock,
     (prg32_any_fn_t)prg32_gfx_set_fullscreen,
     (prg32_any_fn_t)prg32_gfx_fullscreen_enabled,
     (prg32_any_fn_t)prg32_gfx_set_band_color,

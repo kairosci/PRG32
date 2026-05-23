@@ -92,12 +92,14 @@ void app_main(void) {
                 prg32_console_clear();
                 prg32_cart_call_init();
             }
+            prg32_gfx_lock();
             prg32_cart_call_update();
             prg32_cart_call_draw();
 #if PRG32_DEBUG
             prg32_debug_overlay_draw(1, 0, 0, input_snapshot, prg32_diag_frame_count());
 #endif
             prg32_gfx_present();
+            prg32_gfx_unlock();
             prg32_diag_increment_frame();
             prg32_wait_for_frame_target(&next_frame_ms);
         } else {
