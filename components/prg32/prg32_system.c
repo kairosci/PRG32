@@ -49,6 +49,7 @@ typedef enum {
     SETUP_OPTION_AUDIO,
     SETUP_OPTION_DEVELOPER,
     SETUP_OPTION_DEMO,
+    SETUP_OPTION_PERFORMANCE,
     SETUP_OPTION_ABOUT,
     SETUP_OPTION_EXIT,
 } setup_option_id_t;
@@ -662,7 +663,7 @@ static int setup_menu(void) {
     int choice = 0;
     prg32_input_wait_released(SETUP_KEYS);
     while (1) {
-        setup_option_t options[8];
+        setup_option_t options[9];
         int option_count = 0;
         int cart_count = prg32_cart_stored_count();
         if (cart_count > 0) {
@@ -690,6 +691,10 @@ static int setup_menu(void) {
         options[option_count++] = (setup_option_t){
             SETUP_OPTION_DEMO,
             "DEVICE DEMO",
+        };
+        options[option_count++] = (setup_option_t){
+            SETUP_OPTION_PERFORMANCE,
+            "PERFORMANCE TEST",
         };
         options[option_count++] = (setup_option_t){
             SETUP_OPTION_ABOUT,
@@ -752,6 +757,12 @@ static int setup_menu(void) {
                     prg32_device_demo_run();
                     break;
                 }
+                if (selected == SETUP_OPTION_PERFORMANCE) {
+                    prg32_wifi_scores_init();
+                    prg32_scores_api_start();
+                    prg32_performance_test_run();
+                    break;
+                }
                 if (selected == SETUP_OPTION_ABOUT) {
                     about_menu();
                     break;
@@ -769,7 +780,7 @@ static int setup_menu(void) {
             draw_setup_status(28);
             draw_cartridge_status(76);
             for (int i = 0; i < option_count; ++i) {
-                int y = 108 + i * 16;
+                int y = 102 + i * 14;
                 prg32_gfx_text8(8, y, i == choice ? ">" : " ", PRG32_COLOR_GREEN, 0);
                 prg32_gfx_text8(24, y, options[i].label, PRG32_COLOR_WHITE, 0);
             }

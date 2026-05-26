@@ -99,6 +99,16 @@ static esp_err_t send_runtime(httpd_req_t *req) {
                (uintptr_t)prg32_metrics_is_enabled);
     add_import(imports, "prg32_metrics_record", (uintptr_t)prg32_metrics_record);
     add_import(imports, "prg32_metrics_run_id", (uintptr_t)prg32_metrics_run_id);
+    add_import(imports, "prg32_performance_test_run",
+               (uintptr_t)prg32_performance_test_run);
+    add_import(imports, "prg32_performance_has_results",
+               (uintptr_t)prg32_performance_has_results);
+    add_import(imports, "prg32_performance_summary",
+               (uintptr_t)prg32_performance_summary);
+    add_import(imports, "prg32_performance_json_alloc",
+               (uintptr_t)prg32_performance_json_alloc);
+    add_import(imports, "prg32_performance_json_free",
+               (uintptr_t)prg32_performance_json_free);
     add_import(imports, "prg32_audio_init", (uintptr_t)prg32_audio_init);
     add_import(imports, "prg32_audio_shutdown", (uintptr_t)prg32_audio_shutdown);
     add_import(imports, "prg32_audio_get_mode", (uintptr_t)prg32_audio_get_mode);
@@ -388,6 +398,23 @@ out:
     return err;
 }
 
+static esp_err_t get_performance_json(httpd_req_t *req) {
+    char *json = prg32_performance_json_alloc();
+    if (!json) {
+        httpd_resp_send_err(req, 500, "out of memory");
+        return ESP_ERR_NO_MEM;
+    }
+
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req,
+                       "Content-Disposition",
+                       "attachment; filename=\"prg32_performance.json\"");
+    httpd_resp_set_hdr(req, "Cache-Control", "no-store");
+    esp_err_t err = httpd_resp_sendstr(req, json);
+    prg32_performance_json_free(json);
+    return err;
+}
+
 static esp_err_t post_game(httpd_req_t *req) {
 #if PRG32_GAME_UPLOAD_ENABLE
     if (req->content_len <= 0 ||
@@ -498,11 +525,17 @@ void prg32_scores_api_start(void) {
         .method = HTTP_GET,
         .handler = get_screenshot_bmp
     };
+    httpd_uri_t performance = {
+        .uri = "/api/performance.json",
+        .method = HTTP_GET,
+        .handler = get_performance_json
+    };
     ESP_ERROR_CHECK(httpd_register_uri_handler(server, &rt));
     ESP_ERROR_CHECK(httpd_register_uri_handler(server, &games_get));
     ESP_ERROR_CHECK(httpd_register_uri_handler(server, &games_post));
     ESP_ERROR_CHECK(httpd_register_uri_handler(server, &games_select));
     ESP_ERROR_CHECK(httpd_register_uri_handler(server, &screenshot));
+    ESP_ERROR_CHECK(httpd_register_uri_handler(server, &performance));
 
     prg32_http_register_score_handlers(server);
 }

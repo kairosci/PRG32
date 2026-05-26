@@ -338,8 +338,9 @@ The resident firmware also shows a full 320x240 logo splash screen on boot.
 Physical ESP32-C6 builds enter setup when A+B are held during boot, when no
 cartridge is stored, or when multiple cartridges exist without a default. The
 setup menu can run a cartridge, set the default boot cartridge, configure Wi-Fi,
-open the audio setup menu, open the developer status-band menu, show the about
-screen, or launch the device demo. Setup screens show the active Wi-Fi mode and current IP address,
+open the audio setup menu, open the developer status-band menu, launch the
+unattended performance test, show the about screen, or launch the device demo.
+Setup screens show the active Wi-Fi mode and current IP address,
 and either joystick can navigate them with SELECT/B to confirm and A to go
 back. The device demo includes 320x200 sketches inspired by Pong, Breakout,
 Space Invaders, Pacman, Tetris, Pole Position, Asteroids, a side-scrolling
@@ -386,14 +387,18 @@ The C programming tutorial is [docs/tutorial_c_game.md](docs/tutorial_c_game.md)
 - Games: `GET /api/games`, `POST /api/games?slot=cart0`, `POST /api/games/select?slot=cart0`
 - Screenshot: `GET /api/screenshot.bmp`
 - Optional scores: `GET /api/scores`, `POST /api/scores`
+- Performance test: `GET /api/performance.json`
 - Optional metrics server: `POST /api/runs`, `POST /api/metrics/batch`,
   `GET /api/runs/<run_id>/report.md`
 
 `/api/runtime` includes firmware version, cartridge state, frame count, and last input state.
 `/api/screenshot.bmp` returns the current 320x240 framebuffer as a BMP image.
+`/api/performance.json` returns the latest setup-mode unattended benchmark run,
+including raw samples and aggregate windows.
 
 See [docs/metrics_api.md](docs/metrics_api.md) for the opt-in firmware metrics
-configuration and the `tools/prg32_metrics_server` reporting workflow. See
+configuration, setup-mode performance test, `tools/prg32_metrics_paper.py`, and
+the `tools/prg32_metrics_server` reporting workflow. See
 [docs/scientific_measurement_tutorial.md](docs/scientific_measurement_tutorial.md)
 for a step-by-step scientific-paper measurement workflow with screenshots.
 

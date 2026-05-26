@@ -207,6 +207,12 @@ upload is handled asynchronously so the measured frame code does not wait for
 the network. See `docs/metrics_api.md` for the server, export workflow, and lab
 exercise.
 
+Setup mode also includes `PERFORMANCE TEST`, an unattended benchmark that stores
+raw frame samples and one-second aggregate windows in RAM without streaming
+every frame. The latest run is available as `/api/performance.json` until the
+next benchmark or reboot. Use `tools/prg32_metrics_paper.py` to turn that JSON
+into LaTeX tables, captions, and high-resolution figures for a paper.
+
 ## Cartridge runtime
 
 The resident firmware includes a cartridge loader so games can be replaced
@@ -253,8 +259,9 @@ has been saved, that cartridge starts automatically even when multiple slots are
 filled.
 
 The setup main menu contains cartridge launch, default cartridge selection,
-Wi-Fi setup, audio setup, the developer band menu, the device demo, the about
-screen, and exit. Use UP/DOWN to choose, SELECT or B to confirm, and A to cancel/back. The
+Wi-Fi setup, audio setup, the developer band menu, the device demo, the
+performance test, the about screen, and exit. Use UP/DOWN to choose, SELECT or
+B to confirm, and A to cancel/back. The
 device demo is a firmware-owned smoke test for display, input, audio, Wi-Fi
 status, cartridges, sprites, scrolling, playfield rendering, status bands, and
 small sketches inspired by Pong, Breakout, Space Invaders, Pacman, Tetris,
