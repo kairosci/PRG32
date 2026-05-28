@@ -15,7 +15,8 @@ python3 -m py_compile \
   tools/prg32_score_server/app.py \
   tools/prg32_metrics_server/app.py \
   tools/prg32_metrics_server/export_run.py \
-  tools/prg32_metrics_server/report.py
+  tools/prg32_metrics_server/report.py \
+  tools/prg32_metrics_paper.py
 
 echo "[CI] Running unit tests"
 python3 -m unittest discover -s tests

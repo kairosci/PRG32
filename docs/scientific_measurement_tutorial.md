@@ -212,6 +212,36 @@ figures for PRG32 demos and games.
 
 ## 9. Export Metrics
 
+For the built-in unattended benchmark, use setup mode:
+
+1. Enter setup mode.
+2. Select `PERFORMANCE TEST`.
+3. Wait until the summary screen appears.
+4. Download the latest in-RAM metrics file:
+
+```bash
+curl http://192.168.4.1/api/performance.json \
+  --output data/prg32_performance_run01.json
+```
+
+If the board is connected in infrastructure mode, replace `192.168.4.1` with
+the IP address shown at the top of setup mode. The JSON is cleared by reboot and
+is replaced when a new performance test is run, so archive it immediately after
+each run.
+
+Create paper-ready artifacts:
+
+```bash
+python3 tools/prg32_metrics_paper.py data/prg32_performance_run01.json \
+  --out data/paper/prg32_performance_run01 \
+  --dpi 300
+```
+
+This produces LaTeX tables, captions, normalized CSV/JSON data, and
+high-resolution frame-time, stage-time, and heap-stability charts.
+
+For streaming cartridge metrics, use the metrics server workflow.
+
 List runs:
 
 ```bash
@@ -240,12 +270,17 @@ Store raw exports. Do not edit `samples.csv` by hand.
 ## 10. Analyze The Data
 
 Use `summary.csv` for quick tables and `samples.csv` for detailed analysis.
+For the setup-mode JSON workflow, use `table_summary.tex`, `table_windows.tex`,
+and the generated PNG figures directly in the draft paper after checking labels
+and captions.
 For each run, report:
 
 - sample count
 - average frame work time
 - median frame work time
 - p95 frame work time
+- p99 frame work time
+- frame-time jitter
 - maximum frame work time
 - average update time
 - average draw time

@@ -40,6 +40,7 @@ idf_component_register(
         "prg32_keyboard.c"
         "prg32_led.c"
         "prg32_metrics.c"
+        "prg32_performance.c"
         "prg32_platform.c"
         "prg32_sprite.c"
         "prg32_splash.c"
