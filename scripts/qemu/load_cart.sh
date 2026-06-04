@@ -64,9 +64,15 @@ main() {
   ensure_qemu_flash
   ensure_qemu_efuse
   ensure_qemu_firmware
-  build_cartridge "$arg"
 
+  # 1. Explicitly construct the source and destination paths
+  local source_file="$GAMES_DIR/$arg/graphics/game.S"
   local cart_file="$BUILD_DIR/${arg}.prg32"
+
+  # 2. Invoke the updated build_cartridge with both arguments
+  build_cartridge "$source_file" "$cart_file"
+
+  # 3. Inject the compiled cartridge binary
   inject_cartridge "$cart_file"
 }
 

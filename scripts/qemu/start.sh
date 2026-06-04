@@ -3,7 +3,6 @@ set -euo pipefail
 
 # Get the PRG32 Directory
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-
 . "$ROOT_DIR/scripts/utilities/env_variables.sh"
 . "$ROOT_DIR/scripts/utilities/environment_check.sh"
 . "$ROOT_DIR/scripts/utilities/logging.sh"
@@ -11,22 +10,6 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 . "$ROOT_DIR/scripts/qemu/qemu_inject_cartridge.sh"
 . "$ROOT_DIR/scripts/cartridge/build_cartridge.sh"
 
-# DELETE: made redundant by inject_cartridge
-# populate_qemu_flash_image() {
-#   step "Generating QEMU flash image"
-#   (
-#     cd "$BUILD_DIR"
-#     python3 -m esptool --chip=esp32c3 merge_bin --output=flash_image.bin --fill-flash-size=4MB @flash_args
-#   ) || die "Failed to generate $QEMU_IMAGE"
-
-#   local size
-#   size="$(wc -c < "$QEMU_IMAGE" | tr -d '[:space:]')"
-#   if [[ "$size" != "$FLASH_SIZE" ]]; then
-#     die "$QEMU_IMAGE has invalid size ($size bytes). Expected $FLASH_SIZE bytes (4MB)."
-#   fi
-
-#   log_ok "QEMU flash image ready"
-# }
 
 discover_games() {
   GAMES=()
@@ -59,14 +42,16 @@ print_game_menu() {
 
 run_game_flow() {
   local game_name="$1"
-  # Construct the full path to the .prg32 file 
+# 1. Construct the explicit paths for source and destination
+  local source_file="$GAMES_DIR/$game_name/graphics/game.S"
   local cart_file="$BUILD_DIR/${game_name}.prg32"
-
 
   ensure_qemu_efuse
 
-  build_cartridge "$game_name"
-  #populate_qemu_flash_image
+  # 2. Invoke the fixed build_cartridge with both arguments
+  build_cartridge "$source_file" "$cart_file"
+  
+  # 3. Inject the compiled cartridge binary
   inject_cartridge "$cart_file"
 
   launch_qemu
