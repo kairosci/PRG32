@@ -12,6 +12,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "sdkconfig.h"
+#include "driver/uart.h"
 
 static const char *TAG = "prg32_main";
 
@@ -171,6 +172,32 @@ static void prg32_boot_signal(void) {
 }
 #endif
 
+static void check_terminal_keyboard_input(void) {
+    static int initialized = 0;
+    if (!initialized) {
+        if (!uart_is_driver_installed(UART_NUM_0)) {
+            uart_driver_install(UART_NUM_0, 256, 0, 0, NULL, 0);
+        }
+        initialized = 1;
+    }
+
+    uint32_t active_mask = 0;
+    uint8_t c;
+    while (uart_read_bytes(UART_NUM_0, &c, 1, 0) == 1) {
+        switch (c) {
+            case 'w': active_mask |= PRG32_BTN_UP; break;
+            case 's': active_mask |= PRG32_BTN_DOWN; break;
+            case 'a': active_mask |= PRG32_BTN_LEFT; break;
+            case 'd': active_mask |= PRG32_BTN_RIGHT; break;
+            case ' ': active_mask |= PRG32_BTN_A; break;
+            case 'b': active_mask |= PRG32_BTN_B; break;
+            case '\r':
+            case '\n': active_mask |= PRG32_BTN_START; break;
+        }
+    }
+    prg32_diag_set_input_state(active_mask);
+}
+
 void app_main(void) {
     esp_rom_printf("PRG32 ROM: app_main entered\n");
 #if PRG32_BOOT_SIGNAL_ENABLE
@@ -197,6 +224,7 @@ void app_main(void) {
     uint32_t last_idle_log_ms = 0;
     uint32_t next_frame_ms = prg32_ticks_ms();
     while (1) {
+        check_terminal_keyboard_input();
         uint32_t input_snapshot = prg32_controller_read();
         prg32_diag_set_input_state(input_snapshot);
 
