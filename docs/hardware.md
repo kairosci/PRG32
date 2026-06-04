@@ -70,15 +70,15 @@ VU meter.
 | 3V3 or 5V | VIN |
 | GND | GND |
 | GPIO4 | BCLK |
-| GPIO5 | LRC / WS |
-| GPIO6 | DIN |
-| GPIO7 optional | SD |
+| GPIO11 | LRC / WS |
+| GPIO23 | DIN |
+| not wired by default | SD optional |
 
 Connect one 4-8 ohm speaker to the MAX98357A speaker `+` and `-` outputs.
 
-The default audio Kconfig pins overlap the reference display wiring. The
-firmware splash therefore skips I2S welcome audio on this wiring unless the
-audio pins are reassigned to unused GPIOs.
+The default audio Kconfig pins avoid the reference display, joystick, and
+passive buzzer wiring. If a breakout needs explicit SD/shutdown control, assign
+`CONFIG_PRG32_AUDIO_I2S_SD_GPIO` to another unused GPIO before flashing.
 
 ## Stereo Audio
 
@@ -89,9 +89,9 @@ Stereo uses two MAX98357A boards on the same I2S bus:
 | 3V3 or 5V | VIN | VIN |
 | GND | GND | GND |
 | GPIO4 | BCLK | BCLK |
-| GPIO5 | LRC / WS | LRC / WS |
-| GPIO6 | DIN | DIN |
-| GPIO7 optional | SD | SD |
+| GPIO11 | LRC / WS | LRC / WS |
+| GPIO23 | DIN | DIN |
+| optional SD GPIO | SD | SD |
 
 Configure the left board for left output and the right board for right output.
 Breakout pin labels vary; verify the vendor pinout before soldering.

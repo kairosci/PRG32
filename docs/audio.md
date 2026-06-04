@@ -72,9 +72,9 @@ prg32_audio_config_t audio = {
     .mode = PRG32_AUDIO_MODE_STEREO,
     .max_voices = 8,
     .gpio_bclk = 4,
-    .gpio_lrclk = 5,
-    .gpio_data = 6,
-    .gpio_sd = 7,
+    .gpio_lrclk = 11,
+    .gpio_data = 23,
+    .gpio_sd = -1,
 };
 prg32_audio_init(&audio);
 ```
@@ -113,16 +113,15 @@ Default PRG32 audio Kconfig pins:
 | 3V3 or 5V | VIN |
 | GND | GND |
 | GPIO4 | BCLK |
-| GPIO5 | LRC / WS |
-| GPIO6 | DIN |
-| GPIO7 | SD, optional |
+| GPIO11 | LRC / WS |
+| GPIO23 | DIN |
+| not wired by default | SD, optional |
 | GND or default | GAIN |
 
-The current ESP32-C6 breadboard display reference uses GPIO5, GPIO6, and GPIO7
-for LCD BL, SCLK, and MOSI. With that wiring, the startup splash deliberately
-skips I2S audio unless trainers choose non-conflicting audio GPIOs in
-menuconfig or in the example configuration. The passive buzzer fallback remains
-available when `PRG32_PIN_BUZZER` is wired.
+The required I2S pins avoid the reference LCD, joystick, and passive buzzer
+wiring. If a MAX98357A breakout needs explicit shutdown control, assign
+`CONFIG_PRG32_AUDIO_I2S_SD_GPIO` to another unused GPIO in menuconfig; otherwise
+leave SD at `-1` and wire the board for its default enabled state.
 
 Stereo wiring shares the same I2S signals:
 
@@ -131,9 +130,9 @@ Stereo wiring shares the same I2S signals:
 | 3V3 or 5V | VIN | VIN |
 | GND | GND | GND |
 | GPIO4 / BCLK | BCLK | BCLK |
-| GPIO5 / LRCLK | LRC / WS | LRC / WS |
-| GPIO6 / DATA | DIN | DIN |
-| GPIO7 / SD | SD | SD |
+| GPIO11 / LRCLK | LRC / WS | LRC / WS |
+| GPIO23 / DATA | DIN | DIN |
+| optional SD GPIO | SD | SD |
 
 Configure the left board for the left I2S channel and the right board for the
 right channel. Breakout labels vary: common names include `L/R`, `GAIN`,
@@ -174,8 +173,9 @@ Mono:
 1. Disconnect power from the ESP32-C6 board.
 2. Connect ESP32-C6 GND to MAX98357A GND.
 3. Connect ESP32-C6 3V3 or 5V to MAX98357A VIN.
-4. Connect GPIO4 to BCLK, GPIO5 to LRC/WS, and GPIO6 to DIN.
-5. Optionally connect GPIO7 to SD.
+4. Connect GPIO4 to BCLK, GPIO11 to LRC/WS, and GPIO23 to DIN.
+5. Leave SD in the breakout's default enabled state, or connect it to a
+   menuconfig-selected unused GPIO.
 6. Connect the speaker to the MAX98357A speaker `+` and `-` outputs.
 7. Power the board and run `examples/audio_mono_beep`.
 

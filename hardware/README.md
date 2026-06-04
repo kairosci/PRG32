@@ -59,17 +59,17 @@ Mono audio uses one MAX98357A:
 | 3V3 or 5V | VIN |
 | GND | GND |
 | GPIO4 default | BCLK |
-| GPIO5 default | LRC / WS |
-| GPIO6 default | DIN |
-| GPIO7 default, optional | SD |
+| GPIO11 default | LRC / WS |
+| GPIO23 default | DIN |
+| not wired by default | SD, optional |
 
 Stereo uses two MAX98357A boards. Both share BCLK, LRC/WS, DIN, power, and
 ground. Configure one board for left-channel output and the other for
 right-channel output using the breakout-specific jumper or mode pin.
 
-The default audio GPIOs are Kconfig defaults for the audio examples. If a
-classroom kit also uses those pins for display or joystick wiring, choose
-non-conflicting audio pins in menuconfig before flashing.
+The default audio GPIOs avoid the reference display, joystick, and passive
+buzzer wiring. If a MAX98357A breakout needs explicit shutdown control, choose
+an unused SD GPIO in menuconfig before flashing.
 
 Do not connect MAX98357A speaker outputs directly to headphones or line-level
 inputs. Use 4-8 ohm speakers.
