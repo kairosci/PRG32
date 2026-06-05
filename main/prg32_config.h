@@ -148,6 +148,17 @@
 #define PRG32_WIFI_AP_CHANNEL 6
 #define PRG32_WIFI_AP_MAX_CONN 4
 
+/* CartridgeStore integration constants. */
+#define PRG32_STORE_URL_MAX_LEN        128
+#define PRG32_STORE_MDNS_SERVICE       "_prg32store"
+#define PRG32_STORE_MDNS_PROTO         "_tcp"
+#define PRG32_STORE_MDNS_TIMEOUT_MS    3000
+#define PRG32_STORE_DEFAULT_PORT       5080
+#define PRG32_STORE_CATALOG_MAX_BYTES  16384
+#define PRG32_STORE_CHUNK_BYTES        4096
+#define PRG32_STORE_DOWNLOAD_STACK     8192
+#define PRG32_STORE_HTTP_TIMEOUT_MS    5000
+
 /*
  * SELECT is the classroom-facing name; START remains a source-compatible alias.
  * The GPIO20 SELECT mapping matches the 7-button digital joystick harness.

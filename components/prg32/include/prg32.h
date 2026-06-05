@@ -235,6 +235,16 @@ int prg32_score_submit_remote(const char *base_url,
                               const char *player,
                               uint32_t score);
 
+/* CartridgeStore integration. */
+int prg32_store_url_get(char *out_url, size_t max_len);
+int prg32_store_url_set(const char *url);
+void prg32_store_url_clear(void);
+int prg32_store_url_resolve(char *out_url, size_t max_len);
+int prg32_store_discover(char *out_url, size_t max_len);
+int prg32_store_ping(const char *base_url, char *out_name, size_t name_len);
+void prg32_setup_store_run(void);
+void prg32_setup_store_browse_run(void);
+
 void prg32_cart_init(void);
 uintptr_t prg32_cart_load_addr(void);
 size_t prg32_cart_ram_size(void);

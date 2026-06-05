@@ -259,7 +259,8 @@ Flow:
 
 Cartridge metadata and store publishing are documented in
 [docs/cartridge_metadata.md](docs/cartridge_metadata.md),
-[docs/colophon_abi.md](docs/colophon_abi.md), and
+[docs/colophon_abi.md](docs/colophon_abi.md),
+[docs/cartridge_store.md](docs/cartridge_store.md), and
 [docs/setup_mode_cartridge_store.md](docs/setup_mode_cartridge_store.md). The
 download server is the standalone **Cartrige Store** in
 `riscv-prg32/CartridgeStore`; it is not part of this firmware repository.
@@ -321,6 +322,7 @@ The `examples/features` directory contains focused demos for framework features:
 - joystick-driven on-screen keyboard input with printable ASCII support
 - Wi-Fi setup mode
 - cartridge multiplayer API with the external Node.js relay server
+- CartridgeStore integration for catalog discovery and cartridge downloads
 - setup audio menu with output detection, volume, and test tune
 - configurable onboard RGB LED API and optional audio VU meter
 - audio synthesis and sample playback
@@ -352,8 +354,9 @@ The resident firmware also shows a full 320x240 logo splash screen on boot.
 Physical ESP32-C6 builds enter setup when A+B are held during boot, when no
 cartridge is stored, or when multiple cartridges exist without a default. The
 setup menu can run a cartridge, set the default boot cartridge, configure Wi-Fi,
-open the audio setup menu, open the developer status-band menu, launch the
-unattended performance test, show the about screen, or launch the device demo.
+configure CartridgeStore access, browse the store, open the audio setup menu,
+open the developer status-band menu, launch the unattended performance test,
+show the about screen, or launch the device demo.
 Setup screens show the active Wi-Fi mode and current IP address,
 and the local joystick can navigate them with SELECT/B to confirm and A to go
 back. The device demo includes 320x200 sketches inspired by Pong, Breakout,
@@ -439,6 +442,12 @@ for a step-by-step scientific-paper measurement workflow with screenshots.
   trailer for Cartrige Store publishing.
 - `tools/prg32_game.py inspect-metadata`: inspect metadata, assets, signature,
   colophon, and unknown trailer blocks.
+- `tools/prg32_game.py store-discover`: find CartridgeStore instances via mDNS.
+- `tools/prg32_game.py store-list`: print a CartridgeStore catalog table.
+- `tools/prg32_game.py store-download`: download a `.prg32` from a store.
+- `tools/prg32_game.py publish`: build a cartridge and publish a store bundle.
+- `tools/prg32_game.py pack-bundle`: create a flat multi-architecture zip.
+- `tools/prg32_game.py publish-bundle`: upload a prepared bundle.
 
 See [docs/assets.md](docs/assets.md).
 

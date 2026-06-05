@@ -9,3 +9,8 @@ dependencies:
     require: no
     rules:
       - if: "target == esp32c3"
+  espressif/mdns:
+    version: "^1.8.2"
+    require: no
+    rules:
+      - if: "target != esp32c3"

@@ -248,6 +248,19 @@ metadata ABI, [colophon_abi.md](colophon_abi.md) for the colophon ABI, and
 [setup_mode_cartridge_store.md](setup_mode_cartridge_store.md) for the
 setup-mode integration contract.
 
+## Downloading from a CartridgeStore
+
+CartridgeStore provides a shared classroom catalog for `.prg32` artifacts. See
+[cartridge_store.md](cartridge_store.md) for setup, publishing, and
+troubleshooting details.
+
+Two installation paths are available:
+
+- On-device: enter setup, open `BROWSE STORE`, choose a compatible game, and
+  download it into `cart0` or `cart1`.
+- Host tool: run `python3 tools/prg32_game.py store-download ...` and then
+  upload the downloaded `.prg32` with `python3 tools/prg32_game.py upload ...`.
+
 ## HTTP API
 
 ### Runtime Information

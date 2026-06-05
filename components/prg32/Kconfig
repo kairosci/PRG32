@@ -117,4 +117,17 @@ config PRG32_METRICS_QUEUE_LEN
 
 endmenu
 
+menu "CartridgeStore integration"
+
+config PRG32_STORE_URL
+    string "CartridgeStore base URL"
+    default ""
+    help
+        Base URL of the CartridgeStore instance used for catalog browsing
+        and cartridge download. Leave empty to use mDNS auto-discovery.
+        Example: http://192.168.1.42:5080
+        In QEMU builds, mDNS is unavailable; set this to reach a LAN server.
+
+endmenu
+
 endmenu

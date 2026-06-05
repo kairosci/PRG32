@@ -46,6 +46,8 @@ typedef enum {
     SETUP_OPTION_RUN_CART,
     SETUP_OPTION_DEFAULT_CART,
     SETUP_OPTION_WIFI,
+    SETUP_OPTION_STORE_CONFIG,
+    SETUP_OPTION_STORE_BROWSE,
     SETUP_OPTION_AUDIO,
     SETUP_OPTION_DEVELOPER,
     SETUP_OPTION_DEMO,
@@ -668,7 +670,7 @@ static int setup_menu(void) {
     int choice = 0;
     prg32_input_wait_released(SETUP_KEYS);
     while (1) {
-        setup_option_t options[9];
+        setup_option_t options[11];
         int option_count = 0;
         int cart_count = prg32_cart_stored_count();
         if (cart_count > 0) {
@@ -684,6 +686,14 @@ static int setup_menu(void) {
         options[option_count++] = (setup_option_t){
             SETUP_OPTION_WIFI,
             "WIFI SETUP",
+        };
+        options[option_count++] = (setup_option_t){
+            SETUP_OPTION_STORE_CONFIG,
+            "CARTRIDGE STORE",
+        };
+        options[option_count++] = (setup_option_t){
+            SETUP_OPTION_STORE_BROWSE,
+            "BROWSE STORE",
         };
         options[option_count++] = (setup_option_t){
             SETUP_OPTION_AUDIO,
@@ -748,6 +758,14 @@ static int setup_menu(void) {
                 if (selected == SETUP_OPTION_WIFI) {
                     prg32_wifi_setup_run();
                     prg32_scores_api_start();
+                    break;
+                }
+                if (selected == SETUP_OPTION_STORE_CONFIG) {
+                    prg32_setup_store_run();
+                    break;
+                }
+                if (selected == SETUP_OPTION_STORE_BROWSE) {
+                    prg32_setup_store_browse_run();
                     break;
                 }
                 if (selected == SETUP_OPTION_AUDIO) {
