@@ -1,6 +1,6 @@
-# Setup Mode Cartrige Store Integration
+# Setup Mode Cartridge Store Integration
 
-The downloadable game server is called the **Cartrige Store**. Its standalone
+The downloadable game server is called the **Cartridge Store**. Its standalone
 repository is `riscv-prg32/CartridgeStore`; it is intentionally not vendored
 into this PRG32 firmware repository.
 
@@ -13,7 +13,7 @@ network policy and memory budget are fixed for the target boards.
 
 Preferred discovery order:
 
-1. Previously saved Cartrige Store URL from NVS.
+1. Previously saved Cartridge Store URL from NVS.
 2. mDNS service `_prg32store._tcp.local`.
 3. `GET /.well-known/prg32-store.json` on likely local hosts.
 4. Manual URL entry with the joystick text input screen.
@@ -24,7 +24,7 @@ Well-known response:
 ```json
 {
   "abi": "prg32-store-discovery-1.0",
-  "name": "PRG32 Cartrige Store",
+  "name": "PRG32 Cartridge Store",
   "api": "http://host:port/api",
   "web": "http://host:port/",
   "version": "1.0.0"
@@ -51,7 +51,7 @@ request `architecture=qemu`.
 
 A complete setup page should provide:
 
-- manual Cartrige Store URL entry;
+- manual Cartridge Store URL entry;
 - automatic discovery;
 - connection test;
 - browsing games after connection;
@@ -62,7 +62,7 @@ A complete setup page should provide:
 Firmware-side sketch:
 
 ```c
-static void setup_cartrige_store_menu(void) {
+static void setup_cartridge_store_menu(void) {
     char store_url[96];
     load_or_enter_store_url(store_url, sizeof(store_url));
 

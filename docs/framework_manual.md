@@ -270,7 +270,7 @@ filled.
 
 The setup main menu contains cartridge launch, default cartridge selection,
 Wi-Fi setup, audio setup, the developer band menu, the device demo, the
-performance test, the about screen, and exit. The Cartrige Store integration
+performance test, the about screen, and exit. The Cartridge Store integration
 contract adds manual/discovered store URL entry, browsing, colophon preview, and
 download-to-slot behavior for future firmware work. Use UP/DOWN to choose,
 SELECT or B to confirm, and A to cancel/back. The

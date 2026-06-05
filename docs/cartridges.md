@@ -239,7 +239,7 @@ python3 tools/prg32_game.py build ... \
 ```
 
 Use `--architecture esp32c6` for the physical build and `--architecture qemu`
-for the emulator build. The Cartrige Store groups those artifacts by metadata
+for the emulator build. The Cartridge Store groups those artifacts by metadata
 `id` and `version`, then offers the correct architecture to firmware or QEMU
 clients.
 

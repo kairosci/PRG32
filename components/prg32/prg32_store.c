@@ -123,6 +123,11 @@ int prg32_store_discover(char *out_url, size_t max_len) {
         return -1;
     }
     out_url[0] = '\0';
+    esp_err_t init_err = mdns_init();
+    if (init_err != ESP_OK && init_err != ESP_ERR_INVALID_STATE) {
+        ESP_LOGI(TAG, "mDNS init failed: %s", esp_err_to_name(init_err));
+        return -1;
+    }
     mdns_result_t *results = NULL;
     esp_err_t err = mdns_query_ptr(PRG32_STORE_MDNS_SERVICE,
                                    PRG32_STORE_MDNS_PROTO,

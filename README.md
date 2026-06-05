@@ -262,7 +262,7 @@ Cartridge metadata and store publishing are documented in
 [docs/colophon_abi.md](docs/colophon_abi.md),
 [docs/cartridge_store.md](docs/cartridge_store.md), and
 [docs/setup_mode_cartridge_store.md](docs/setup_mode_cartridge_store.md). The
-download server is the standalone **Cartrige Store** in
+download server is the standalone **Cartridge Store** in
 `riscv-prg32/CartridgeStore`; it is not part of this firmware repository.
 
 ## ❗ Troubleshooting
@@ -439,7 +439,7 @@ for a step-by-step scientific-paper measurement workflow with screenshots.
 - `tools/prg32audio_pack.py`: pack samples, instruments, and tracks into an
   AUDIO block for `.prg32` cartridges.
 - `tools/prg32_game.py attach-metadata`: append a deterministic `PRG32META`
-  trailer for Cartrige Store publishing.
+  trailer for Cartridge Store publishing.
 - `tools/prg32_game.py inspect-metadata`: inspect metadata, assets, signature,
   colophon, and unknown trailer blocks.
 - `tools/prg32_game.py store-discover`: find CartridgeStore instances via mDNS.

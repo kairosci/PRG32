@@ -122,7 +122,7 @@ compatibility.
 
 A `.prg32` file contains one linked executable image. ESP32-C6 hardware and the
 QEMU graphics workflow can require different runtime addresses and import
-tables, so the Cartrige Store manages them as separate architecture variants of
+tables, so the Cartridge Store manages them as separate architecture variants of
 the same game/version:
 
 | Architecture id | Build target | Typical output |
@@ -160,7 +160,7 @@ python3 tools/prg32_game.py inspect-metadata dist/game-esp32c6.prg32
 
 The builder serializes JSON blocks deterministically with sorted keys and compact
 separators. Cartridges without `SCRN` or `SIGN` are valid. Cartridges without
-`COLO` are also valid, but the builder warns because the Cartrige Store prefers
+`COLO` are also valid, but the builder warns because the Cartridge Store prefers
 colophon-complete cartridges.
 
 ## Compatibility Notes

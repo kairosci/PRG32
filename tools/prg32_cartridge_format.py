@@ -428,7 +428,7 @@ def build_cartridge(
     normalized_colophon = normalize_colophon(colophon) if colophon is not None else None
     if normalized_colophon is None:
         warnings.warn(
-            "building a metadata trailer without COLO; the Cartrige Store "
+            "building a metadata trailer without COLO; the Cartridge Store "
             "prefers colophon-complete cartridges",
             stacklevel=2,
         )
