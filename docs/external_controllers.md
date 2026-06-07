@@ -68,7 +68,7 @@ Example: player 2 LEFT is bit 8, so the packet is:
 In `main/prg32_config.h`:
 
 ```c
-#define PRG32_CONTROLLER_BRIDGE_ENABLE 1
+#define PRG32_CONTROLLER_BRIDGE_ENABLE 0
 #define PRG32_CONTROLLER_BRIDGE_UART 1
 #define PRG32_CONTROLLER_BRIDGE_BAUD 115200
 #define PRG32_PIN_CONTROLLER_TX 16

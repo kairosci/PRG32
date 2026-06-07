@@ -42,7 +42,7 @@ static const char *TAG = "prg32_controller";
  * consoles, which makes it a useful Computer Architecture teaching example.
  */
 
-#if PRG32_CONTROLLER_BRIDGE_ENABLE
+#if PRG32_CONTROLLER_BRIDGE_ENABLE > 0
 static uint32_t bridge_state;
 static uint8_t bridge_packet[4];
 static int bridge_packet_len;
@@ -110,8 +110,10 @@ void prg32_controller_bridge_init(void) {
 
 static uint32_t read_bridge(void) {
     uint8_t b[16];
+    printf("read_bridge => uart_read_bytes(PRG32_CONTROLLER_BRIDGE_UART)");
     int n = uart_read_bytes(PRG32_CONTROLLER_BRIDGE_UART, b, sizeof(b), 0);
     for (int i = 0; i < n; ++i) {
+        printf("bridge_feed()");
         bridge_feed(b[i]);
     }
     return bridge_state;
@@ -142,7 +144,7 @@ static uint32_t read_gpio_buttons(void) {
         v |= PRG32_BTN_B;
     }
     if (PRG32_PIN_BTN_START >= 0 && !gpio_get_level(PRG32_PIN_BTN_START)) {
-        v |= PRG32_BTN_SELECT;
+        v |= PRG32_BTN_START;
     }
     if (PRG32_PIN_BTN_SELECT >= 0 && !gpio_get_level(PRG32_PIN_BTN_SELECT)) {
         v |= PRG32_BTN_SELECT;
@@ -181,7 +183,7 @@ uint32_t prg32_controller_read(void) {
 #if PRG32_RESTART_HOTKEY_ENABLE
     if ((v & PRG32_RESTART_HOTKEY_P1) == PRG32_RESTART_HOTKEY_P1 ||
         (v & PRG32_RESTART_HOTKEY_P2) == PRG32_RESTART_HOTKEY_P2) {
-        ESP_LOGE(TAG, "ABOUT TO esp_restart() from %s:%d", __FILE__, __LINE__);
+        ESP_LOGE(TAG, "ABOUT TO esp_restart() from %s:%d\n", __FILE__, __LINE__);
         vTaskDelay(pdMS_TO_TICKS(500));
         esp_restart();
     }

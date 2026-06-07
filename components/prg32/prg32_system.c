@@ -660,11 +660,14 @@ static void about_menu(void) {
 }
 
 static int setup_menu(void) {
+    printf("setup_menu => start\n");
     int choice = 0;
+    printf("setup_menu => input_wait_released(SETUP_KEYS)\n");
     prg32_input_wait_released(SETUP_KEYS);
     while (1) {
         setup_option_t options[9];
         int option_count = 0;
+        printf("setup_menu => prg32_cart_stored_count\n");
         int cart_count = prg32_cart_stored_count();
         if (cart_count > 0) {
             options[option_count++] = (setup_option_t){
@@ -707,9 +710,10 @@ static int setup_menu(void) {
         if (choice >= option_count) {
             choice = option_count - 1;
         }
-
+        printf("setup_menu => prg32_input_read_menu()\n");
         uint32_t last = prg32_input_read_menu();
         while (1) {
+            printf("setup_menu => prg32_input_read_menu()\n");
             uint32_t input = prg32_input_read_menu();
             if ((input & PRG32_BTN_UP) && !(last & PRG32_BTN_UP) && choice > 0) {
                 choice--;
@@ -720,7 +724,10 @@ static int setup_menu(void) {
                 choice++;
             }
             if ((input & PRG32_BTN_A) && !(last & PRG32_BTN_A)) {
+                printf("setup_menu => input_wait_released(SETUP_CANCEL)\n");
                 prg32_input_wait_released(SETUP_CANCEL);
+                printf("setup_menu => cart_is_loaded()\n");
+                printf("setup_menu => autoload_cartridge()\n");
                 if (prg32_cart_is_loaded() || autoload_cartridge() == 0) {
                     return 0;
                 }
@@ -729,6 +736,7 @@ static int setup_menu(void) {
             if (((input & PRG32_BTN_SELECT) && !(last & PRG32_BTN_SELECT)) ||
                 ((input & PRG32_BTN_B) && !(last & PRG32_BTN_B))) {
                 setup_option_id_t selected = options[choice].id;
+                printf("setup_menu => input_wait_released(SETUP_ACCEPT)\n");
                 prg32_input_wait_released(SETUP_ACCEPT);
                 if (selected == SETUP_OPTION_RUN_CART) {
                     if (cartridge_picker("RUN CARTRIDGE", true) == 0) {
@@ -789,6 +797,7 @@ static int setup_menu(void) {
                              "UP/DOWN MOVE  SELECT/B OK  A BACK",
                              PRG32_COLOR_CYAN,
                              0);
+            printf("setup_menu => prg32_gfx_present()\n");
             prg32_gfx_present();
             last = input;
             vTaskDelay(pdMS_TO_TICKS(80));
@@ -797,49 +806,71 @@ static int setup_menu(void) {
 }
 
 void prg32_init(void) {
+    printf("prg32_init()\n");
+    printf("prg32_init => prg32_display_init()\n");
     prg32_display_init();
+    printf("prg32_init => prg32_rgb_led_init()\n");
     prg32_rgb_led_init(PRG32_PIN_RGB_LED);
+    printf("prg32_init => prg32_audio_pwm_init()\n");
     prg32_audio_pwm_init();
+    printf("prg32_init => prg32_splash_show_default()\n");
     prg32_splash_show_default();
+    printf("prg32_init => prg32_input_init()\n");
     prg32_input_init();
+    printf("prg32_init => prg32_abi_exports_keep()\n");
     prg32_abi_exports_keep();
+    printf("prg32_init => prg32_cart_init()\n");
     prg32_cart_init();
+    printf("prg32_init => prg32_band_load_config()\n");
     prg32_band_load_config();
+    printf("prg32_init => prg32_input_read_menu()\n");
     uint32_t boot_input = prg32_input_read_menu();
+    printf("prg32_init => prg32_cart_stored_count()\n");
     int stored_count = prg32_cart_stored_count();
+    printf("prg32_init => prg32_wifi_setup_requested()\n");
+    printf("prg32_init => prg32_cart_default_slot()\n");
     bool setup_requested =
         PRG32_BOOT_SETUP_MODE ||
         prg32_wifi_setup_requested() ||
         ((boot_input & PRG32_BTN_A) && (boot_input & PRG32_BTN_B)) ||
         stored_count == 0 ||
         (stored_count > 1 && prg32_cart_default_slot() < 0);
-
+    printf("prg32_init => autoload_cartridge()\n");
     if (!setup_requested && autoload_cartridge() != 0) {
         setup_requested = true;
     }
-
     if (setup_requested) {
         prg32_gfx_set_fullscreen(1);
         if (stored_count == 0) {
+            printf("prg32_init => wifi_scores_init()\n");
             prg32_wifi_scores_init();
+            printf("prg32_init => scores_api_start()\n");
             prg32_scores_api_start();
         }
+        printf("prg32_init => setup_menu()\n");
         setup_menu();
     }
 
+    printf("prg32_init => wifi_scores_init()\n");
+    printf("prg32_init => scores_api_start()\n");
 #if PRG32_WIFI_SCORES_ENABLE
     prg32_wifi_scores_init();
     prg32_scores_api_start();
 #endif
 
+    printf("prg32_init => cart_is_loaded()\n");
+    printf("prg32_init => cart_stored_count()\n");
     if (!prg32_cart_is_loaded() && prg32_cart_stored_count() > 0) {
+        printf("prg32_init => autoload_cartridge()\n");
         autoload_cartridge();
     }
     prg32_gfx_set_fullscreen(0);
     prg32_gfx_clear(PRG32_COLOR_BLACK);
     prg32_gfx_present();
     prg32_set_mode(PRG32_DEFAULT_MODE);
+    printf("prg32_init => cart_is_loaded()\n");
     if (!prg32_cart_is_loaded()) {
+        printf("prg32_init => console_clear()\n");
         prg32_console_clear();
     }
 }

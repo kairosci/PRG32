@@ -21,7 +21,7 @@ typedef void (*prg32_cart_entry_t)(void);
 
 static const char *TAG = "prg32_cart";
 
-uint8_t prg32_cart_exec[PRG32_CART_RAM_SIZE] IRAM_ATTR __attribute__((aligned(16)));
+uint8_t prg32_cart_exec[PRG32_CART_RAM_SIZE] __attribute__((section(".iram1.data"))) __attribute__((aligned(16)));
 
 static const char *const g_cart_labels[PRG32_CART_SLOT_COUNT] = {
     "cart0",
