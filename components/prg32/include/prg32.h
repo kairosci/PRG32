@@ -256,6 +256,7 @@ int prg32_cart_install_slot(uint8_t slot,
                             const void *image,
                             size_t image_size,
                             int persist);
+int prg32_cart_store_slot(uint8_t slot, const void *image, size_t image_size);
 int prg32_cart_select_stored(void);
 int prg32_cart_select_slot(uint8_t slot);
 int prg32_cart_default_slot(void);

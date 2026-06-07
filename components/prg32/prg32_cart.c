@@ -503,6 +503,73 @@ int prg32_cart_install_slot(uint8_t slot,
     return rc;
 }
 
+int prg32_cart_store_slot(uint8_t slot, const void *image, size_t image_size) {
+    if (slot >= PRG32_CART_SLOT_COUNT) {
+        set_error("invalid cartridge slot");
+        return -1;
+    }
+    if (!image || image_size < PRG32_CART_HEADER_MIN_SIZE) {
+        set_error("missing cartridge image");
+        return -1;
+    }
+
+    const prg32_cart_header_t *h = (const prg32_cart_header_t *)image;
+    const uint8_t *payload = NULL;
+    const uint8_t *audio_block = NULL;
+    size_t audio_size = 0;
+
+    ESP_LOGI(TAG,
+             "cart store: validating %s image size=%lu",
+             slot_name(slot),
+             (unsigned long)image_size);
+    if (validate_header(h, image_size, &payload, &audio_block, &audio_size) != 0) {
+        return -1;
+    }
+
+    const esp_partition_t *part = cart_partition_by_slot(slot);
+    if (!part) {
+        set_errorf("%s partition not found", slot_name(slot));
+        return -1;
+    }
+    if (image_size > part->size) {
+        set_errorf("cartridge is larger than %s partition", slot_name(slot));
+        return -1;
+    }
+
+    if (lock_cart() != 0) {
+        set_error("failed to lock cartridge storage");
+        return -1;
+    }
+    ESP_LOGI(TAG,
+             "cart store: erase %s size=%lu",
+             slot_name(slot),
+             (unsigned long)part->size);
+    esp_err_t err = esp_partition_erase_range(part, 0, part->size);
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG,
+                 "cart store: write %lu bytes to %s",
+                 (unsigned long)image_size,
+                 slot_name(slot));
+        err = esp_partition_write(part, 0, image, image_size);
+    }
+    unlock_cart();
+
+    if (err != ESP_OK) {
+        set_errorf("failed to persist cartridge: %s", esp_err_to_name(err));
+        return -1;
+    }
+
+    prg32_cart_header_t stored_header;
+    if (read_stored_header(slot, &stored_header, NULL, NULL) != 0) {
+        set_error("failed to verify stored cartridge");
+        return -1;
+    }
+
+    set_error("ok");
+    ESP_LOGI(TAG, "cart store: done %s", slot_name(slot));
+    return 0;
+}
+
 int prg32_cart_select_stored(void) {
     for (uint8_t slot = 0; slot < PRG32_CART_SLOT_COUNT; ++slot) {
         prg32_cart_header_t header;

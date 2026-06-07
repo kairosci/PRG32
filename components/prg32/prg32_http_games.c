@@ -450,6 +450,7 @@ static esp_err_t get_performance_json(httpd_req_t *req) {
 
 static esp_err_t post_game(httpd_req_t *req) {
 #if PRG32_GAME_UPLOAD_ENABLE
+    ESP_LOGI(TAG, "POST /api/games content_len=%d", req->content_len);
     if (req->content_len <= 0 ||
         (size_t)req->content_len > PRG32_CART_RAM_SIZE + sizeof(prg32_cart_header_t)) {
         char msg[96];
@@ -482,21 +483,29 @@ static esp_err_t post_game(httpd_req_t *req) {
         received += (size_t)n;
     }
     uint8_t slot = request_slot(req);
-    int err = prg32_cart_install_slot(slot, body, received, 1);
+    ESP_LOGI(TAG, "POST /api/games received=%lu", (unsigned long)received);
+    ESP_LOGI(TAG, "POST /api/games slot=%u", (unsigned)slot);
+    ESP_LOGI(TAG, "POST /api/games storing slot=%u", (unsigned)slot);
+    int err = prg32_cart_store_slot(slot, body, received);
     free(body);
     if (err != 0) {
         httpd_resp_send_err(req, 400, prg32_cart_last_error());
         return ESP_FAIL;
     }
+    ESP_LOGI(TAG, "POST /api/games stored slot=%u", (unsigned)slot);
     prg32_cart_info_t info;
-    prg32_cart_get_info(&info);
-    char response[128];
+    prg32_cart_get_slot_info(slot, &info);
+    char response[192];
     snprintf(response,
              sizeof(response),
-             "{\"ok\":true,\"slot\":\"%s\",\"name\":\"%s\"}",
+             "{\"ok\":true,\"slot\":\"%s\",\"stored\":%s,\"loaded\":%s,\"name\":\"%s\",\"code_size\":%lu}",
              info.slot_name,
-             info.name);
+             info.stored ? "true" : "false",
+             info.loaded ? "true" : "false",
+             info.name,
+             (unsigned long)info.code_size);
     httpd_resp_set_type(req, "application/json");
+    ESP_LOGI(TAG, "POST /api/games sending response");
     httpd_resp_sendstr(req, response);
     return ESP_OK;
 #else
