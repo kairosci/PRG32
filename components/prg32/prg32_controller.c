@@ -111,9 +111,11 @@ void prg32_controller_bridge_init(void) {
 }
 
 static uint32_t read_bridge(void) {
+    printf("read_bridge => uart_read_bytes(PRG32_CONTROLLER_BRIDGE_UART)");
     uint8_t b[16];
     int n = uart_read_bytes(PRG32_CONTROLLER_BRIDGE_UART, b, sizeof(b), 0);
     for (int i = 0; i < n; ++i) {
+        printf("bridge_feed()");
         bridge_feed(b[i]);
     }
     return bridge_state;
@@ -184,7 +186,9 @@ uint32_t prg32_controller_read(void) {
 #if PRG32_RESTART_HOTKEY_ENABLE
     if ((v & PRG32_RESTART_HOTKEY_P1) == PRG32_RESTART_HOTKEY_P1 ||
         (v & PRG32_RESTART_HOTKEY_P2) == PRG32_RESTART_HOTKEY_P2) {
-        esp_restart();
+            ESP_LOGE(TAG, "ABOUT TO esp_restart() from %s:%d\n", __FILE__, __LINE__);
+            vTaskDelay(pdMS_TO_TICKS(500));
+            esp_restart();
     }
 #endif
     return v;

@@ -60,10 +60,6 @@
 #define PRG32_PIN_BTN_A      -1
 #define PRG32_PIN_BTN_B      -1
 #define PRG32_PIN_BTN_START  -1
-#define PRG32_PIN_SETUP      -1
-#define PRG32_PIN_BUZZER     -1
-#define PRG32_BOOT_DIAGNOSTIC_DELAY_MS 0
-
 #define PRG32_PIN_P2_LEFT    -1
 #define PRG32_PIN_P2_RIGHT   -1
 #define PRG32_PIN_P2_UP      -1
@@ -71,13 +67,15 @@
 #define PRG32_PIN_P2_A       -1
 #define PRG32_PIN_P2_B       -1
 #define PRG32_PIN_P2_START   -1
+#define PRG32_PIN_SETUP      -1
+#define PRG32_PIN_BUZZER     -1
+#define PRG32_BOOT_DIAGNOSTIC_DELAY_MS 0
 
 #define PRG32_CONTROLLER_BRIDGE_ENABLE 0
 #define PRG32_CONTROLLER_BRIDGE_UART 1
 #define PRG32_CONTROLLER_BRIDGE_BAUD 115200
 #define PRG32_PIN_CONTROLLER_TX -1
 #define PRG32_PIN_CONTROLLER_RX -1
-
 #define PRG32_PIN_RGB_LED -1
 
 #define PRG32_GAME_UPLOAD_ENABLE 0
@@ -134,7 +132,7 @@
  * is disabled by default. Set this to the board LED GPIO only when that pin is
  * free in your hardware variant.
  */
-#define PRG32_PIN_RGB_LED 8
+#define PRG32_PIN_RGB_LED -1
 #endif
 
 /*
@@ -205,5 +203,6 @@
 #else
 #define PRG32_PIN_BTN_SELECT PRG32_PIN_BTN_START
 #endif
+#define PRG32_PIN_P2_SELECT  PRG32_PIN_P2_START
 
 #endif
