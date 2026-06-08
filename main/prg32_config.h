@@ -64,6 +64,20 @@
 #define PRG32_PIN_BUZZER     -1
 #define PRG32_BOOT_DIAGNOSTIC_DELAY_MS 0
 
+#define PRG32_PIN_P2_LEFT    -1
+#define PRG32_PIN_P2_RIGHT   -1
+#define PRG32_PIN_P2_UP      -1
+#define PRG32_PIN_P2_DOWN    -1
+#define PRG32_PIN_P2_A       -1
+#define PRG32_PIN_P2_B       -1
+#define PRG32_PIN_P2_START   -1
+
+#define PRG32_CONTROLLER_BRIDGE_ENABLE 0
+#define PRG32_CONTROLLER_BRIDGE_UART 1
+#define PRG32_CONTROLLER_BRIDGE_BAUD 115200
+#define PRG32_PIN_CONTROLLER_TX -1
+#define PRG32_PIN_CONTROLLER_RX -1
+
 #define PRG32_PIN_RGB_LED -1
 
 #define PRG32_GAME_UPLOAD_ENABLE 0
@@ -97,7 +111,22 @@
 
 #define PRG32_PIN_SETUP      -1
 
-#define PRG32_PIN_BUZZER     -1
+/* Optional second digital joystick. Leave pins at -1 when not mounted. */
+#define PRG32_PIN_P2_LEFT    -1
+#define PRG32_PIN_P2_RIGHT   -1
+#define PRG32_PIN_P2_UP      -1
+#define PRG32_PIN_P2_DOWN    -1
+#define PRG32_PIN_P2_A       -1
+#define PRG32_PIN_P2_B       -1
+#define PRG32_PIN_P2_START   -1
+#define PRG32_PIN_BUZZER     15
+
+/* Optional USB-controller support via an external USB HID host bridge. */
+#define PRG32_CONTROLLER_BRIDGE_ENABLE -1
+#define PRG32_CONTROLLER_BRIDGE_UART 1
+#define PRG32_CONTROLLER_BRIDGE_BAUD 115200
+#define PRG32_PIN_CONTROLLER_TX 16
+#define PRG32_PIN_CONTROLLER_RX 17
 
 /*
  * Many ESP32-C6 boards route the onboard addressable RGB LED to GPIO8. The
@@ -161,13 +190,20 @@
 
 /*
  * SELECT is the classroom-facing name; START remains a source-compatible alias.
- * The GPIO20 SELECT mapping matches the 7-button digital joystick harness.
- * GPIO14 is still read through PRG32_PIN_BTN_START for older wiring.
+ * GPIO14 remains the safe default for classroom wiring. Set
+ * PRG32_ENABLE_SEPARATE_SELECT_PIN to 1 in a local build only when the
+ * optional 7-button harness wires SELECT to GPIO20.
  */
+#ifndef PRG32_ENABLE_SEPARATE_SELECT_PIN
+#define PRG32_ENABLE_SEPARATE_SELECT_PIN 0
+#endif
+
 #if CONFIG_PRG32_DISPLAY_QEMU_RGB
 #define PRG32_PIN_BTN_SELECT PRG32_PIN_BTN_START
-#else
+#elif PRG32_ENABLE_SEPARATE_SELECT_PIN
 #define PRG32_PIN_BTN_SELECT 20
+#else
+#define PRG32_PIN_BTN_SELECT PRG32_PIN_BTN_START
 #endif
 
 #endif

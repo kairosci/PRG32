@@ -9,6 +9,7 @@ PRG32 is an educational runtime for RISC-V assembly and C games.
 - Course style: first-year/early undergraduate assembly and systems labs
 - Academic supervisor / project lead: Raffaele Montella - UniParthenope
 - Contributor (student): Ivan Cafiero - UniParthenope - Computer Science student
+- Contributor (student): Simone Boscaglia - UniParthenope - Computer Science student
 
 ## 🚀 Quick Start (macOS)
 
@@ -24,24 +25,20 @@ cd esp-idf
 . ./export.sh
 
 # 3) Project
-cd /path/to/PRG32
+cd <path_to_PRG32>
 
 # 4) Build and flash physical ESP32-C6 firmware
 idf.py -B build-esp32c6 -D SDKCONFIG=build-esp32c6/sdkconfig -D SDKCONFIG_DEFAULTS=sdkconfig.defaults set-target esp32c6
 idf.py -B build-esp32c6 -D SDKCONFIG=build-esp32c6/sdkconfig -D SDKCONFIG_DEFAULTS=sdkconfig.defaults flash monitor
 
 # 5) Build QEMU firmware
-idf.py -B build-qemu -D SDKCONFIG=build-qemu/sdkconfig -D SDKCONFIG_DEFAULTS=sdkconfig.defaults.qemu set-target esp32c3
-idf.py -B build-qemu -D SDKCONFIG=build-qemu/sdkconfig -D SDKCONFIG_DEFAULTS=sdkconfig.defaults.qemu build
-
-# 6) Run QEMU once (creates build-qemu/qemu_flash.bin)
-idf.py -B build-qemu -D SDKCONFIG=build-qemu/sdkconfig -D SDKCONFIG_DEFAULTS=sdkconfig.defaults.qemu qemu --graphics monitor
+./scripts/qemu/build_qemu.sh
 ```
 
 Open a second terminal (source ESP-IDF again), then stage a demo cartridge:
 
 ```bash
-cd /path/to/PRG32
+cd <path_to_PRG32>
 . $HOME/esp-idf/export.sh
 python3 tools/prg32_game.py build \
   examples/games/asteroids/graphics/game.S \
@@ -49,7 +46,7 @@ python3 tools/prg32_game.py build \
   --entry-prefix asteroids_graphics \
   --name asteroids \
   --out build-qemu/asteroids.prg32
-python3 tools/prg32_game.py upload-qemu build-qemu/asteroids.prg32 --flash build-qemu/qemu_flash.bin
+python3 tools/prg32_game.py upload-qemu build-qemu/asteroids.prg32 --flash build-qemu/flash_image.bin
 ```
 
 Run everything with one command next time:
@@ -57,6 +54,107 @@ Run everything with one command next time:
 ```bash
 ./scripts/run_qemu_demo.sh
 ```
+
+## Documentation Index
+
+Start with
+[docs/getting_started_game_development.md](docs/getting_started_game_development.md)
+when setting up a new Windows, Linux, or macOS development machine. It covers
+ESP-IDF, PlatformIO, QEMU, physical upload, a from-scratch hello world
+cartridge, and a manual Cartridge Store publishing bundle.
+
+Core workflow documents:
+
+- [docs/deployment.md](docs/deployment.md): build, flash, monitor, setup mode,
+  QEMU, and the resident firmware deployment model.
+- [docs/qemu.md](docs/qemu.md): desktop virtual-screen setup, ESP32-C3 QEMU
+  target notes, cartridge staging, and QEMU troubleshooting.
+- [docs/cartridges.md](docs/cartridges.md): `.prg32` cartridge build/upload
+  workflow, runtime ABI lookup, hardware slots, QEMU staging, and AUDIO blocks.
+- [docs/api.md](docs/api.md): board HTTP endpoints, score API, runtime
+  metadata, screenshots, Cartridge Store API, and MetricsServer API.
+- [docs/cartridge-format.md](docs/cartridge-format.md): binary `.prg32`
+  package layout and optional AUDIO block format.
+- [docs/framework_manual.md](docs/framework_manual.md): PRG32 C/assembly ABI,
+  graphics, input, audio, setup mode, Wi-Fi, metrics, and cartridge loader APIs.
+- [docs/abi.md](docs/abi.md): compact ABI reference for cartridge-facing
+  functions, constants, input bits, status bands, and setup helpers.
+- [docs/hardware.md](docs/hardware.md): board, display, input, audio, and
+  external controller architecture.
+- [docs/external_controllers.md](docs/external_controllers.md): UART packet
+  bridge for external controllers and two-player input.
+- [docs/ili9341_notes.md](docs/ili9341_notes.md): hardware display notes and
+  RGB565 byte-order reminders.
+
+Learning and classroom documents:
+
+- [docs/tutorial.md](docs/tutorial.md): first assembly game tutorial and
+  cartridge packaging introduction.
+- [docs/tutorial_ascii_game.md](docs/tutorial_ascii_game.md): text-mode
+  assembly game tutorial.
+- [docs/tutorial_graphic_game.md](docs/tutorial_graphic_game.md): graphics
+  assembly tutorial with draw calls and state updates.
+- [docs/tutorial_c_game.md](docs/tutorial_c_game.md): C game tutorial using the
+  same runtime ABI and cartridge workflow.
+- [docs/examples.md](docs/examples.md): example game and feature-demo overview.
+- [examples/games/README.md](examples/games/README.md): run and package the
+  standard game examples.
+- [docs/teaching_with_prg32.md](docs/teaching_with_prg32.md): instructor notes,
+  course sequencing, and assembly/C comparison tracks.
+- [docs/labs/README.md](docs/labs/README.md): lab sequence overview.
+- [docs/labs/lab_01_hello_world.md](docs/labs/lab_01_hello_world.md): first
+  output and build checkpoint.
+- [docs/labs/lab_02_input.md](docs/labs/lab_02_input.md): joystick bitmask
+  input lab.
+- [docs/labs/lab_03_graphics.md](docs/labs/lab_03_graphics.md): drawing and
+  viewport lab.
+- [docs/labs/lab_04_sound.md](docs/labs/lab_04_sound.md): audio and sample
+  playback lab.
+- [docs/labs/lab_05_scores_and_controllers.md](docs/labs/lab_05_scores_and_controllers.md):
+  score API, runtime query, and external controller lab.
+- [docs/labs/debugging_memory_inspection.md](docs/labs/debugging_memory_inspection.md):
+  inspect memory state while debugging student games.
+- [docs/labs/debugging_register_tracing.md](docs/labs/debugging_register_tracing.md):
+  trace RISC-V register state across calls.
+- [docs/labs/break_fix_assignments.md](docs/labs/break_fix_assignments.md):
+  assessment-friendly broken examples and repair prompts.
+
+Assets, audio, and measurement documents:
+
+- [docs/assets.md](docs/assets.md): image, GIF, sprite, tile, and asset
+  conversion tools.
+- [docs/audio.md](docs/audio.md): I2S audio wiring, audio APIs, samples,
+  tracker-style assets, and cartridge AUDIO blocks.
+- [docs/score_api.md](docs/score_api.md): board-local and optional Flask/SQLite
+  score service endpoints.
+- [docs/metrics_api.md](docs/metrics_api.md): setup-mode performance test,
+  streaming metrics, report export, and server endpoints.
+- [docs/scientific_measurement_tutorial.md](docs/scientific_measurement_tutorial.md):
+  reproducible performance measurement workflow for papers and lab reports.
+- [docs/images/README.md](docs/images/README.md): screenshot and documentation
+  image capture guidance.
+
+Recommended reading paths:
+
+- Build the firmware: read `docs/getting_started_game_development.md`, then
+  `docs/deployment.md`; use `docs/qemu.md` for the virtual screen.
+- Create a new game: start with `docs/tutorial.md` for assembly or
+  `docs/tutorial_c_game.md` for C, then read `docs/cartridges.md`.
+- Upload a cartridge to hardware: read `docs/getting_started_game_development.md`
+  sections 11-13, then `docs/cartridges.md`.
+- Publish a game package: read `docs/getting_started_game_development.md`
+  sections 14-15, then the Cartridge Store section of `docs/api.md`.
+- Convert images or audio: read `docs/assets.md` and `docs/audio.md`.
+- Run performance tests: read `docs/metrics_api.md`, then
+  `docs/scientific_measurement_tutorial.md`.
+- Contribute game examples: read `docs/tutorial_ascii_game.md`,
+  `docs/tutorial_graphic_game.md`, `docs/tutorial_c_game.md`, and
+  `examples/games/README.md`.
+- Contribute firmware changes: read `docs/framework_manual.md`,
+  `docs/abi.md`, `docs/deployment.md`, and the validation checklist in
+  `AGENTS.md`.
+- Prepare or teach a lab: read `docs/teaching_with_prg32.md` and
+  `docs/labs/README.md`.
 
 ## 🍏 macOS Setup (Tested on Apple Silicon)
 
@@ -193,9 +291,7 @@ pio device monitor -b 115200
 QEMU path:
 
 ```bash
-idf.py -B build-qemu -D SDKCONFIG=build-qemu/sdkconfig -D SDKCONFIG_DEFAULTS=sdkconfig.defaults.qemu set-target esp32c3
-idf.py -B build-qemu -D SDKCONFIG=build-qemu/sdkconfig -D SDKCONFIG_DEFAULTS=sdkconfig.defaults.qemu build
-idf.py -B build-qemu -D SDKCONFIG=build-qemu/sdkconfig -D SDKCONFIG_DEFAULTS=sdkconfig.defaults.qemu qemu --graphics monitor
+./scripts/qemu/build_qemu.sh
 ```
 
 Linux notes:
@@ -287,7 +383,10 @@ download server is the standalone **Cartridge Store** in
 - QEMU runs but the game does not move: focus the QEMU monitor terminal and use
   arrow keys or `W`/`A`/`S`/`D` for joystick 1, `Enter`/`Space` for SELECT,
   `J`/`Z` for A, and `K`/`X` for B.
-- Cartridge upload fails: `build-qemu/qemu_flash.bin` is missing/invalid, or the
+- QEMU runs but the game does not move: focus the terminal running QEMU. Use
+  arrow keys or `W`/`A`/`S`/`D` for joystick 1, `Enter`/`Space` for SELECT,
+  `J`/`Z` for A, and `K`/`X` for B.
+- Cartridge upload fails: `build-qemu/flash_image.bin` is missing/invalid, or the
   cartridge is too large. Run QEMU once, then rerun `upload-qemu`.
 - `riscv32-esp-elf-gcc` missing: re-run `./install.sh esp32c3,esp32c6` and
   source the ESP-IDF export script.
@@ -535,6 +634,8 @@ See `docs/images/README.md` for capture instructions.
 
 - Raffaele Montella - UniParthenope - academic supervisor / project lead
 - Ivan Cafiero - UniParthenope - Computer Science student
+- Simone Boscaglia - UniParthenope - Computer Science student
+
 
 See [CONTRIBUTORS.md](CONTRIBUTORS.md) for contributor metadata suitable for
 academic submissions.

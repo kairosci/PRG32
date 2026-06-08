@@ -34,7 +34,7 @@ typedef struct __attribute__((packed)) {
 
 static const char *TAG = "prg32_cart";
 
-uint8_t prg32_cart_exec[PRG32_CART_RAM_SIZE] IRAM_ATTR __attribute__((aligned(16)));
+uint8_t prg32_cart_exec[PRG32_CART_RAM_SIZE] __attribute__((section(".iram1.data"))) __attribute__((aligned(16)));
 
 static const char *const g_cart_labels[PRG32_CART_SLOT_COUNT] = {
     "cart0",
@@ -684,6 +684,9 @@ int prg32_cart_get_slot_info(uint8_t slot, prg32_cart_info_t *info) {
     info->slot = slot;
     info->load_addr = (uint32_t)(uintptr_t)prg32_cart_exec;
 
+    if (lock_cart() != 0) {
+        return -1;
+    }
     prg32_cart_header_t header;
     uint32_t audio_size = 0;
     if (read_stored_header(slot, &header, NULL, &audio_size) == 0) {
@@ -697,6 +700,7 @@ int prg32_cart_get_slot_info(uint8_t slot, prg32_cart_info_t *info) {
     }
     info->loaded = (g_loaded && g_current_slot == slot) ? 1 : 0;
     info->generation = g_generation;
+    unlock_cart();
     return 0;
 }
 

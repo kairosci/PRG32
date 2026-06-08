@@ -181,10 +181,10 @@ Stage it into the QEMU flash image:
 ```bash
 python3 tools/prg32_game.py upload-qemu \
   build-qemu/asteroids.prg32 \
-  --flash build-qemu/qemu_flash.bin
+  --flash build-qemu/flash_image.bin
 ```
 
-If `build-qemu/qemu_flash.bin` is missing, start QEMU once so ESP-IDF creates
+If `build-qemu/flash_image.bin` is missing, start QEMU once so ESP-IDF creates
 the flash image, quit QEMU, and run the staging command again.
 
 Then start QEMU:
@@ -294,8 +294,8 @@ Content-Type: application/octet-stream
 <game.prg32 bytes>
 ```
 
-Validates, stores, and starts the cartridge. Use `slot=cart1` for the second
-slot.
+Validates and stores the cartridge without starting it. Use `slot=cart1` for
+the second slot.
 
 ### Select Stored Game
 
@@ -303,7 +303,7 @@ slot.
 POST /api/games/select?slot=cart0
 ```
 
-Reloads the stored cartridge in the selected slot.
+Loads and starts the stored cartridge in the selected slot.
 
 ### Screenshot
 
@@ -413,4 +413,4 @@ This is intentionally a classroom loader, not a general dynamic linker.
   partition size, not cartridge executable RAM.
 - Two flash slots, `cart0` and `cart1`, are available. Only one cartridge is
   loaded into executable RAM at a time.
-- QEMU staging requires QEMU to be stopped before patching `qemu_flash.bin`.
+- QEMU staging requires QEMU to be stopped before patching `flash_image.bin`.

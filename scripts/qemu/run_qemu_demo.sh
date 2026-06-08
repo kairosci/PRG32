@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 QEMU_BUILD_DIR="build-qemu"
 QEMU_SDKCONFIG="$QEMU_BUILD_DIR/sdkconfig"
 QEMU_DEFAULTS="sdkconfig.defaults.qemu"
 DEMO_SOURCE="examples/games/asteroids/graphics/game.S"
 DEMO_PREFIX="asteroids_graphics"
 DEMO_CART="$QEMU_BUILD_DIR/asteroids.prg32"
-DEMO_FLASH="$QEMU_BUILD_DIR/qemu_flash.bin"
+DEMO_FLASH="$QEMU_BUILD_DIR/flash_image.bin"
 
 fail() {
   echo "[FAIL] $1" >&2

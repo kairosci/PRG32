@@ -57,6 +57,15 @@ extern "C" {
 #define PRG32_BTN_START (1u << 6)
 #define PRG32_BTN_SELECT PRG32_BTN_START
 
+#define PRG32_P2_BTN_LEFT  (1u << 8)
+#define PRG32_P2_BTN_RIGHT (1u << 9)
+#define PRG32_P2_BTN_UP    (1u << 10)
+#define PRG32_P2_BTN_DOWN  (1u << 11)
+#define PRG32_P2_BTN_A     (1u << 12)
+#define PRG32_P2_BTN_B     (1u << 13)
+#define PRG32_P2_BTN_START (1u << 14)
+#define PRG32_P2_BTN_SELECT PRG32_P2_BTN_START
+
 #define PRG32_COLOR_BLACK   0x0000
 #define PRG32_COLOR_WHITE   0xffff
 #define PRG32_COLOR_RED     0xf800

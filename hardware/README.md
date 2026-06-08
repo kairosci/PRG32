@@ -4,7 +4,7 @@
 
 - ESP32-C6 development board
 - ILI9341 2.8 inch SPI TFT, 320x240
-- one 5-way digital joystick module
+- one 5-way digital joystick module for player 1
 - one setup button, or use the joystick push switch when the wiring allows it
 - Passive buzzer
 - one MAX98357A I2S DAC/amplifier breakout and one 4-8 ohm speaker for mono
@@ -80,9 +80,7 @@ single board can average both slots or select either one.
 Do not connect MAX98357A speaker outputs directly to headphones or line-level
 inputs. Use 4-8 ohm speakers.
 
-The previous six-tactile-button layout is replaced by a digital joystick module
-such as the user-provided reference part:
-<https://www.amazon.it/dp/B07HBPW3DF?ref=ppx_yo2ov_dt_b_fed_asin_title>.
+Digirak joystick: <https://www.amazon.it/dp/B07HBPW3DF>.
 Wire each joystick direction as a normally-open switch to ground; PRG32 enables
 internal pull-ups.
 
