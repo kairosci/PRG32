@@ -192,6 +192,10 @@ default and controlled through Kconfig:
 - `CONFIG_PRG32_METRICS_UPLOAD_PERIOD_MS`
 - `CONFIG_PRG32_METRICS_QUEUE_LEN`
 
+The metrics upload queue is allocated only when a metrics run starts. Recording
+remains non-blocking; if the queue fills, new samples are dropped and reported
+with the next uploaded batch.
+
 The public API is in `prg32_metrics.h`:
 
 - `prg32_metrics_init(config)`
