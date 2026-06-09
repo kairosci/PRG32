@@ -3,7 +3,9 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#if __has_include("sdkconfig.h")
 #include "sdkconfig.h"
+#endif
 #include "prg32_audio.h"
 #include "prg32_metrics.h"
 #include "prg32_multiplayer.h"
