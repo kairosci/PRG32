@@ -334,13 +334,17 @@ int prg32_wifi_start_mode(const prg32_wifi_config_t *config) {
         return -1;
     }
 
-    wifi_config_t sta = {0};
+    wifi_config_t sta = {
+        .sta = {
+            .scan_method = WIFI_ALL_CHANNEL_SCAN,
+            .sort_method = WIFI_CONNECT_AP_BY_SIGNAL
+        }
+    };
     copy_cstr((char *)sta.sta.ssid, sizeof(sta.sta.ssid), config->ssid);
     copy_cstr((char *)sta.sta.password,
               sizeof(sta.sta.password),
               config->password);
     if (selected_ap_valid &&
-        selected_ap_locked &&
         strcmp(config->ssid, selected_ssid) == 0) {
         memcpy(sta.sta.bssid, selected_bssid, sizeof(sta.sta.bssid));
         sta.sta.bssid_set = true;
@@ -556,6 +560,13 @@ static int scan_networks(wifi_ap_record_t **records_out,
 
     wifi_scan_config_t scan = {
         .show_hidden = true,
+        .scan_type = WIFI_SCAN_TYPE_ACTIVE,
+        .scan_time = {
+            .active = {
+                .min = 100,
+                .max = 300
+            }
+        }
     };
     uint16_t found_count = 0;
     err = esp_wifi_scan_start(&scan, true);
@@ -626,7 +637,8 @@ static void select_ap_record(const wifi_ap_record_t *record) {
 
 static void select_ap_record_for_boot(const wifi_ap_record_t *record) {
     select_ap_record(record);
-    selected_ap_locked = false;
+    // explicitly allow using the locked BSSID from refresh scan
+    selected_ap_locked = true;
 }
 
 static void refresh_stored_sta_ap(const prg32_wifi_config_t *config) {
