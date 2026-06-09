@@ -18,7 +18,7 @@
 #if CONFIG_PRG32_DISPLAY_QEMU_RGB
 #define STORE_MAX_GAMES 40
 #else
-#define STORE_MAX_GAMES 4
+#define STORE_MAX_GAMES 64
 #endif
 #define STORE_PAGE_SIZE 4
 
