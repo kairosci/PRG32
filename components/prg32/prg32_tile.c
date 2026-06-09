@@ -1,6 +1,6 @@
 #include "prg32.h"
-#include <stdlib.h>
 #include <string.h>
+#include "esp_heap_caps.h"
 
 typedef struct {
     uint8_t bits[8];
@@ -33,15 +33,15 @@ static int tile_grid_ready(void) {
     if (g_tiles && g_map && g_dirty) {
         return 1;
     }
-    tile_t *tiles = calloc(256, sizeof(tile_t));
+    tile_t *tiles = heap_caps_calloc(256, sizeof(tile_t), MALLOC_CAP_8BIT);
     uint8_t (*map)[PRG32_TILE_COLS] =
-        calloc(PRG32_TILE_ROWS, sizeof(*map));
+        heap_caps_calloc(PRG32_TILE_ROWS, sizeof(*map), MALLOC_CAP_8BIT);
     uint8_t (*dirty)[PRG32_TILE_COLS] =
-        calloc(PRG32_TILE_ROWS, sizeof(*dirty));
+        heap_caps_calloc(PRG32_TILE_ROWS, sizeof(*dirty), MALLOC_CAP_8BIT);
     if (!tiles || !map || !dirty) {
-        free(tiles);
-        free(map);
-        free(dirty);
+        heap_caps_free(tiles);
+        heap_caps_free(map);
+        heap_caps_free(dirty);
         return 0;
     }
     g_tiles = tiles;
@@ -54,7 +54,9 @@ static int playfield_ready(void) {
     if (g_playfield) {
         return 1;
     }
-    g_playfield = calloc(PRG32_PLAYFIELD_LAYERS, sizeof(*g_playfield));
+    g_playfield = heap_caps_calloc(PRG32_PLAYFIELD_LAYERS,
+                                   sizeof(*g_playfield),
+                                   MALLOC_CAP_8BIT);
     return g_playfield != NULL;
 }
 

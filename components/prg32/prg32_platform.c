@@ -1,7 +1,7 @@
 #include "prg32.h"
 #include <stddef.h>
-#include <stdlib.h>
 #include <string.h>
+#include "esp_heap_caps.h"
 
 static uint8_t *g_tile_flags;
 
@@ -27,7 +27,9 @@ static int tile_flags_ready(void) {
     if (g_tile_flags) {
         return 1;
     }
-    g_tile_flags = calloc(256, sizeof(g_tile_flags[0]));
+    g_tile_flags = heap_caps_calloc(256,
+                                    sizeof(g_tile_flags[0]),
+                                    MALLOC_CAP_8BIT);
     return g_tile_flags != NULL;
 }
 

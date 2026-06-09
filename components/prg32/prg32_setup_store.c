@@ -1,3 +1,6 @@
+#include "prg32.h"
+#include "prg32_config.h"
+#include "esp_heap_caps.h"
 #include "esp_http_client.h"
 #include "esp_log.h"
 #include "esp_system.h"
@@ -34,28 +37,32 @@ static store_game_t *games;
 static int game_count;
 
 static int store_buffers_alloc(char *status, size_t status_len) {
-  if (catalog_body && games) {
+    if (catalog_body && games) {
+        return 0;
+    }
+    catalog_body = heap_caps_calloc(1,
+                                    PRG32_STORE_CATALOG_MAX_BYTES,
+                                    MALLOC_CAP_8BIT);
+    games = heap_caps_calloc(STORE_MAX_GAMES,
+                             sizeof(store_game_t),
+                             MALLOC_CAP_8BIT);
+    if (!catalog_body || !games) {
+        heap_caps_free(catalog_body);
+        heap_caps_free(games);
+        catalog_body = NULL;
+        games = NULL;
+        snprintf(status, status_len, "NO MEM");
+        return -1;
+    }
     return 0;
-  }
-  catalog_body = calloc(1, PRG32_STORE_CATALOG_MAX_BYTES);
-  games = calloc(STORE_MAX_GAMES, sizeof(store_game_t));
-  if (!catalog_body || !games) {
-    free(catalog_body);
-    free(games);
-    catalog_body = NULL;
-    games = NULL;
-    snprintf(status, status_len, "NO MEM");
-    return -1;
-  }
-  return 0;
 }
 
 static void store_buffers_free(void) {
-  free(catalog_body);
-  free(games);
-  catalog_body = NULL;
-  games = NULL;
-  game_count = 0;
+    heap_caps_free(catalog_body);
+    heap_caps_free(games);
+    catalog_body = NULL;
+    games = NULL;
+    game_count = 0;
 }
 
 static void wait_and_show(const char *line, uint32_t ms) {
@@ -232,30 +239,32 @@ static int contains_casefold(const char *text, const char *needle) {
 }
 
 static int filter_catalog(const char *query) {
-  if (!catalog_body || !games) {
-    return 0;
-  }
-  store_game_t *all_games = malloc(STORE_MAX_GAMES * sizeof(store_game_t));
-  if (!all_games) {
-    game_count = 0;
-    return 0;
-  }
-  int all_count = parse_catalog(catalog_body);
-  memcpy(all_games, games, STORE_MAX_GAMES * sizeof(store_game_t));
-  if (!query || !query[0]) {
-    free(all_games);
-    return all_count;
-  }
-  game_count = 0;
-  for (int i = 0; i < all_count && game_count < STORE_MAX_GAMES; ++i) {
-    if (contains_casefold(all_games[i].title, query) ||
-        contains_casefold(all_games[i].tags, query) ||
-        contains_casefold(all_games[i].id, query)) {
-      games[game_count++] = all_games[i];
+    if (!catalog_body || !games) {
+        return 0;
     }
-  }
-  free(all_games);
-  return game_count;
+    store_game_t *all_games = heap_caps_malloc(
+        STORE_MAX_GAMES * sizeof(store_game_t),
+        MALLOC_CAP_8BIT);
+    if (!all_games) {
+        game_count = 0;
+        return 0;
+    }
+    int all_count = parse_catalog(catalog_body);
+    memcpy(all_games, games, STORE_MAX_GAMES * sizeof(store_game_t));
+    if (!query || !query[0]) {
+        heap_caps_free(all_games);
+        return all_count;
+    }
+    game_count = 0;
+    for (int i = 0; i < all_count && game_count < STORE_MAX_GAMES; ++i) {
+        if (contains_casefold(all_games[i].title, query) ||
+            contains_casefold(all_games[i].tags, query) ||
+            contains_casefold(all_games[i].id, query)) {
+            games[game_count++] = all_games[i];
+        }
+    }
+    heap_caps_free(all_games);
+    return game_count;
 }
 
 static int fetch_catalog(const char *base_url, char *status,

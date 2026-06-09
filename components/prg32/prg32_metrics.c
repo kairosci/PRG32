@@ -19,6 +19,7 @@
 
 #include "cJSON.h"
 #include "esp_err.h"
+#include "esp_heap_caps.h"
 #include "esp_http_client.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
@@ -140,7 +141,9 @@ static bool queue_alloc(void) {
     if (g_queue) {
         return true;
     }
-    g_queue = calloc(PRG32_METRICS_QUEUE_CAP, sizeof(g_queue[0]));
+    g_queue = heap_caps_calloc(PRG32_METRICS_QUEUE_CAP,
+                               sizeof(g_queue[0]),
+                               MALLOC_CAP_8BIT);
     if (!g_queue) {
         ESP_LOGW(TAG,
                  "could not allocate metrics queue (%u samples)",
@@ -157,7 +160,7 @@ static void queue_free(void) {
     g_queue = NULL;
     queue_clear_locked();
     taskEXIT_CRITICAL(&g_lock);
-    free(queue);
+    heap_caps_free(queue);
 }
 
 static bool queue_empty(void) {
