@@ -395,18 +395,26 @@ static int stream_download(const char *base_url, const store_game_t *game,
     esp_http_client_cleanup(client);
     return -1;
   }
-  uint8_t chunk[PRG32_STORE_CHUNK_BYTES];
+  uint8_t *chunk = heap_caps_malloc(PRG32_STORE_CHUNK_BYTES, MALLOC_CAP_8BIT);
+  if (!chunk) {
+    snprintf(status, status_len, "NO MEM");
+    esp_http_client_close(client);
+    esp_http_client_cleanup(client);
+    return -1;
+  }
   size_t offset = 0;
   while (offset < (size_t)content_len) {
-    int read = esp_http_client_read(client, (char *)chunk, sizeof(chunk));
+    int read = esp_http_client_read(client, (char *)chunk, PRG32_STORE_CHUNK_BYTES);
     if (read <= 0) {
       snprintf(status, status_len, "TIMEOUT");
+      heap_caps_free(chunk);
       esp_http_client_close(client);
       esp_http_client_cleanup(client);
       return -1;
     }
     if (prg32_cart_stream_write(slot, offset, chunk, (size_t)read) != 0) {
       snprintf(status, status_len, "%s", prg32_cart_last_error());
+      heap_caps_free(chunk);
       esp_http_client_close(client);
       esp_http_client_cleanup(client);
       return -1;
@@ -414,6 +422,7 @@ static int stream_download(const char *base_url, const store_game_t *game,
     offset += (size_t)read;
     vTaskDelay(pdMS_TO_TICKS(1));
   }
+  heap_caps_free(chunk);
   esp_http_client_close(client);
   esp_http_client_cleanup(client);
   if (prg32_cart_stream_end(slot, offset) != 0) {
@@ -617,8 +626,13 @@ void prg32_setup_store_browse_run(void) {
   prg32_scores_api_start();
   char url[PRG32_STORE_URL_MAX_LEN];
   if (prg32_store_url_resolve(url, sizeof(url)) != 0) {
+#ifdef PRG32_STORE_SERVER_URL
+    snprintf(url, sizeof(url), "%s", PRG32_STORE_SERVER_URL);
+    prg32_store_url_set(url);
+#else
     wait_and_show("CONFIGURE STORE FIRST", 2000);
     return;
+#endif
   }
   char status[32];
   if (store_buffers_alloc(status, sizeof(status)) != 0) {
