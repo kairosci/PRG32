@@ -354,7 +354,7 @@ static void scene_draw_text_overlay(uint8_t screen_index,
                                     const prg32_perf_scene_t *scene,
                                     uint32_t global_frame,
                                     uint32_t local_frame) {
-    static const char *rows[] = {
+    static const char *const rows[] = {
         "REGISTER TRACE  A0 A1 A2 A3",
         "MEMORY VIEW     0000 1000 2000",
         "STACK           RA SP S0 S1",
