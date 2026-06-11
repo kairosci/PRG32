@@ -81,13 +81,12 @@ Password: prg32game
 URL:      http://192.168.4.1
 ```
 
-Build a cartridge from an assembly or C example. This example uses the firmware
-ELF from the local build to obtain the runtime addresses:
+Build a cartridge from an assembly or C example. This example uses the portable ABI table, so it does not need a firmware ELF:
 
 ```bash
 python3 tools/prg32_game.py build \
   examples/games/asteroids/graphics/game.S \
-  --firmware-elf build-esp32c6/PRG32.elf \
+  --portable \
   --entry-prefix asteroids_graphics \
   --name asteroids \
   --out build-esp32c6/asteroids.prg32
@@ -98,6 +97,11 @@ Upload it to the board:
 ```bash
 python3 tools/prg32_game.py upload build-esp32c6/asteroids.prg32 --url http://192.168.4.1
 ```
+
+The upload tool reads `/api/runtime` before deployment and rejects incompatible
+cartridges before sending them. The error message names the incompatible ABI
+major, ABI hash, missing feature bits, or legacy load address. The firmware
+performs the same ABI contract check when it receives or loads a cartridge.
 
 The firmware stores the cartridge in `cart0` by default and starts running it
 from the main loop. Upload to `cart1` with:
@@ -120,7 +124,7 @@ can also mark the package header with `PRG32_CART_FLAG_MULTIPLAYER`:
 ```bash
 python3 tools/prg32_game.py build \
   examples/games/pong/c/game.c \
-  --firmware-elf build-esp32c6/PRG32.elf \
+  --portable \
   --entry-prefix pong_c \
   --multiplayer \
   --name pong-mp \
@@ -136,21 +140,21 @@ On ESP32-C6, multiplayer uses Wi-Fi station mode and the standalone Node.js
 keeps the same API available with a local offline stub so the cartridge still
 builds and runs on the desktop path.
 
-## Runtime Query Workflow
+## Portable Build Workflow
 
-If the board is already running and the host can reach its HTTP API, the build
-tool can query the runtime directly:
+Portable cartridges use the generated ABI table contract and do not need a
+firmware ELF or runtime HTTP query at build time:
 
 ```bash
 python3 tools/prg32_game.py build \
   examples/games/asteroids/graphics/game.S \
-  --runtime-url http://192.168.4.1 \
+  --portable \
   --entry-prefix asteroids_graphics \
   --name asteroids \
   --out build-esp32c6/asteroids.prg32
 ```
 
-Useful runtime endpoint:
+Useful runtime endpoint for diagnostics:
 
 ```bash
 curl http://192.168.4.1/api/runtime
@@ -165,12 +169,12 @@ idf.py -B build-qemu -D SDKCONFIG=build-qemu/sdkconfig -D SDKCONFIG_DEFAULTS=sdk
 idf.py -B build-qemu -D SDKCONFIG=build-qemu/sdkconfig -D SDKCONFIG_DEFAULTS=sdkconfig.defaults.qemu build
 ```
 
-Build a cartridge against the QEMU firmware ELF:
+Build a portable cartridge for QEMU staging:
 
 ```bash
 python3 tools/prg32_game.py build \
   examples/games/asteroids/graphics/game.S \
-  --firmware-elf build-qemu/PRG32.elf \
+  --portable \
   --entry-prefix asteroids_graphics \
   --name asteroids \
   --out build-qemu/asteroids.prg32
@@ -181,10 +185,10 @@ Stage it into the QEMU flash image:
 ```bash
 python3 tools/prg32_game.py upload-qemu \
   build-qemu/asteroids.prg32 \
-  --flash build-qemu/flash_image.bin
+  --flash build-qemu/qemu_flash.bin
 ```
 
-If `build-qemu/flash_image.bin` is missing, start QEMU once so ESP-IDF creates
+If `build-qemu/qemu_flash.bin` is missing, start QEMU once so ESP-IDF creates
 the flash image, quit QEMU, and run the staging command again.
 
 Then start QEMU:
@@ -229,12 +233,12 @@ workflow:
 ```bash
 # Physical board variant.
 python3 tools/prg32_game.py build ... \
-  --firmware-elf build-esp32c6/PRG32.elf \
+  --portable \
   --out build-esp32c6/game.prg32
 
 # QEMU variant.
 python3 tools/prg32_game.py build ... \
-  --firmware-elf build-qemu/PRG32.elf \
+  --portable \
   --out build-qemu/game.prg32
 ```
 
@@ -242,6 +246,16 @@ Use `--architecture esp32c6` for the physical build and `--architecture qemu`
 for the emulator build. The Cartridge Store groups those artifacts by metadata
 `id` and `version`, then offers the correct architecture to firmware or QEMU
 clients.
+
+Build every checked-in game and feature example as a portable cartridge and
+prepare flat CartridgeStore bundles:
+
+```bash
+python3 tools/prg32_build_portable_examples.py --clean
+```
+
+The output directory defaults to `build-portable-examples`. For each example the
+script writes a `.prg32` file plus `esp32c6` and `qemu` publishing bundles.
 
 See [cartridge_metadata.md](cartridge_metadata.md) for the binary trailer and
 metadata ABI, [colophon_abi.md](colophon_abi.md) for the colophon ABI, and
@@ -260,6 +274,11 @@ Two installation paths are available:
   download it into `cart0` or `cart1`.
 - Host tool: run `python3 tools/prg32_game.py store-download ...` and then
   upload the downloaded `.prg32` with `python3 tools/prg32_game.py upload ...`.
+
+Both paths validate the ABI contract. A cartridge with the wrong ABI major,
+wrong ABI hash, unsupported required feature bits, unsupported import model, or
+wrong legacy load address is rejected with a clear diagnostic instead of being
+deployed silently.
 
 ## HTTP API
 
@@ -332,7 +351,7 @@ The existing graphics examples already follow the right shape:
 - use normal RV32 calling convention
 - save `ra` before calling PRG32 C helpers
 - keep stack alignment at 16 bytes around C calls
-- keep code/data small enough for the 32 KiB cartridge RAM window
+- keep code/data small enough for the configured cartridge RAM profile
 
 The cartridge linker resolves normal calls such as:
 
@@ -358,7 +377,7 @@ them as small freestanding C modules:
 ```bash
 python3 tools/prg32_game.py build \
   examples/games/platformer/c/game.c \
-  --firmware-elf build-esp32c6/PRG32.elf \
+  --portable \
   --entry-prefix platformer_c \
   --name platformer-c \
   --out build-esp32c6/platformer-c.prg32
@@ -391,7 +410,7 @@ Attach it to a cartridge:
 ```bash
 python3 tools/prg32_game.py build \
   examples/games/asteroids/graphics/game.S \
-  --firmware-elf build-esp32c6/PRG32.elf \
+  --portable \
   --entry-prefix asteroids_graphics \
   --audio-block build/audio.block \
   --name asteroids-audio \
@@ -408,9 +427,12 @@ This is intentionally a classroom loader, not a general dynamic linker.
 
 - Cartridges are linked for one PRG32 firmware build.
 - If the firmware is rebuilt, rebuild the cartridges.
-- Cartridge RAM is 32 KiB.
+- Cartridge package size is 32 KiB.
+- Cartridge RAM is selected by `CONFIG_PRG32_CART_RAM_PROFILE`: physical
+  classroom builds default to 32 KiB, while QEMU and extended builds use
+  64 KiB unless a custom profile is selected.
 - AUDIO blocks are stored after the code payload and count against cartridge
-  partition size, not cartridge executable RAM.
+  package size and partition size, not cartridge executable RAM.
 - Two flash slots, `cart0` and `cart1`, are available. Only one cartridge is
   loaded into executable RAM at a time.
-- QEMU staging requires QEMU to be stopped before patching `flash_image.bin`.
+- QEMU staging requires QEMU to be stopped before patching `qemu_flash.bin`.

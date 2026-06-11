@@ -3,9 +3,13 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#if __has_include("sdkconfig.h")
+#include "sdkconfig.h"
+#endif
 #include "prg32_audio.h"
 #include "prg32_metrics.h"
 #include "prg32_multiplayer.h"
+#include "prg32_abi.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -83,6 +87,10 @@ extern "C" {
 #define PRG32_CART_ABI_MINOR 0
 #define PRG32_CART_FLAG_AUDIO_BLOCK (1u << 0)
 #define PRG32_CART_FLAG_MULTIPLAYER (1u << 1)
+#define PRG32_CART_FLAG_ABI_TABLE (1u << 2)
+#define PRG32_CART_FLAG_RELOCATABLE (1u << 3)
+#define PRG32_IMPORT_MODEL_LEGACY_ABSOLUTE 0u
+#define PRG32_IMPORT_MODEL_ABI_TABLE 1u
 #define PRG32_CART_META_MAGIC "PRG32META"
 #define PRG32_CART_META_VERSION 1
 #define PRG32_CART_META_ABI "prg32-metadata-1.0"
@@ -94,7 +102,12 @@ extern "C" {
 #define PRG32_CART_META_BLOCK_COLOPHON "COLO"
 #define PRG32_CART_ARCH_ESP32C6 "esp32c6"
 #define PRG32_CART_ARCH_QEMU "qemu"
-#define PRG32_CART_RAM_SIZE (32u * 1024u)
+#define PRG32_CART_LOAD_ADDR 0x40800000u
+#define PRG32_CART_MAX_SIZE (32u * 1024u)
+#ifndef CONFIG_PRG32_CART_RAM_KIB
+#define CONFIG_PRG32_CART_RAM_KIB 32
+#endif
+#define PRG32_CART_RAM_SIZE ((uint32_t)CONFIG_PRG32_CART_RAM_KIB * 1024u)
 #define PRG32_CART_NAME_LEN 32
 #define PRG32_CART_SLOT_COUNT 2
 #ifndef PRG32_FIRMWARE_VERSION
@@ -116,6 +129,29 @@ typedef struct __attribute__((packed)) {
     uint32_t payload_crc32;
     char name[PRG32_CART_NAME_LEN];
 } prg32_cart_header_t;
+
+typedef struct __attribute__((packed)) {
+    char magic[4];
+    uint16_t abi_major;
+    uint16_t abi_minor;
+    uint16_t header_size;
+    uint16_t flags;
+    uint32_t load_addr;
+    uint32_t code_size;
+    uint32_t mem_size;
+    uint32_t init_offset;
+    uint32_t update_offset;
+    uint32_t draw_offset;
+    uint32_t payload_crc32;
+    char name[PRG32_CART_NAME_LEN];
+    uint32_t abi_hash;
+    uint32_t required_features;
+    uint32_t optional_features;
+    uint32_t isa_flags;
+    uint32_t relocation_offset;
+    uint32_t relocation_count;
+    uint32_t import_model;
+} prg32_cart_header_v2_t;
 
 typedef struct {
     char slot_name[8];
@@ -266,6 +302,10 @@ int prg32_cart_install_slot(uint8_t slot,
                             size_t image_size,
                             int persist);
 int prg32_cart_store_slot(uint8_t slot, const void *image, size_t image_size);
+size_t prg32_cart_slot_size(uint8_t slot);
+int prg32_cart_stream_begin(uint8_t slot, size_t image_size);
+int prg32_cart_stream_write(uint8_t slot, size_t offset, const void *data, size_t len);
+int prg32_cart_stream_end(uint8_t slot, size_t image_size);
 int prg32_cart_select_stored(void);
 int prg32_cart_select_slot(uint8_t slot);
 int prg32_cart_default_slot(void);
@@ -287,6 +327,7 @@ void prg32_console_hex32(uint32_t value);
 void prg32_gfx_clear(uint16_t color);
 void prg32_gfx_present(void);
 void prg32_gfx_lock(void);
+int prg32_gfx_try_lock(uint32_t timeout_ms);
 void prg32_gfx_unlock(void);
 void prg32_gfx_set_fullscreen(int enabled);
 int prg32_gfx_fullscreen_enabled(void);
@@ -334,7 +375,6 @@ void prg32_debug_overlay_draw(int enabled,
                               int y,
                               uint32_t input_mask,
                               uint32_t frame);
-void prg32_device_demo_run(void);
 
 void prg32_keyboard_init(prg32_keyboard_t *keyboard,
                          char *buffer,

@@ -35,117 +35,33 @@ from prg32_cartridge_format import (  # noqa: E402
     parse_file,
     summary_dict,
 )
+from prg32_abi_generated import (  # noqa: E402
+    ABI_HASH,
+    ABI_MAJOR,
+    ABI_MINOR,
+    FEATURE_BITS,
+    IMPORT_NAMES,
+)
 
 CART_HEADER = struct.Struct("<4sHHHHIIIIIII32s")
+CART_HEADER_V2 = struct.Struct("<4sHHHHIIIIIII32sIIIIIII")
 CART_MAGIC = b"PRG2"
-CART_ABI_MAJOR = 1
-CART_ABI_MINOR = 0
+CART_ABI_MAJOR = ABI_MAJOR
+CART_ABI_MINOR = ABI_MINOR
 PRG32_CART_FLAG_AUDIO_BLOCK = 1 << 0
 PRG32_CART_FLAG_MULTIPLAYER = 1 << 1
+PRG32_CART_FLAG_ABI_TABLE = 1 << 2
+PRG32_IMPORT_MODEL_LEGACY_ABSOLUTE = 0
+PRG32_IMPORT_MODEL_ABI_TABLE = 1
 AUDIO_BLOCK_MAGIC = b"AUD0"
 DEFAULT_PARTITION_TABLE = ROOT / "partitions_prg32.csv"
 DEFAULT_CART_SLOT = "cart0"
-FALLBACK_CART_RAM_SIZE = 32 * 1024
+FALLBACK_CART_RAM_SIZE = 64 * 1024
+FALLBACK_CART_MAX_SIZE = 32 * 1024
+FALLBACK_CART_LOAD_ADDR = 0x40800000
 STORE_DISCOVERY_ABI = "prg32-store-discovery-1.0"
 STORE_METADATA_ABI = "prg32-metadata-1.0"
 STORE_CONFIG = Path.home() / ".prg32" / "config.json"
-
-IMPORT_NAMES = [
-    "prg32_ticks_ms",
-    "prg32_input_read",
-    "prg32_input_read_player",
-    "prg32_input_read_menu",
-    "prg32_controller_read",
-    "prg32_audio_beep",
-    "prg32_audio_tone",
-    "prg32_audio_note",
-    "prg32_audio_play_notes",
-    "prg32_audio_sample_u8",
-    "prg32_audio_init",
-    "prg32_audio_shutdown",
-    "prg32_audio_get_mode",
-    "prg32_audio_play_sample",
-    "prg32_audio_play_sample_pan",
-    "prg32_audio_stop_channel",
-    "prg32_audio_stop_all",
-    "prg32_audio_note_on",
-    "prg32_audio_note_on_pan",
-    "prg32_audio_note_off",
-    "prg32_audio_play_track",
-    "prg32_audio_stop_track",
-    "prg32_audio_set_tempo",
-    "prg32_audio_set_master_volume",
-    "prg32_audio_set_channel_volume",
-    "prg32_audio_set_channel_pan",
-    "prg32_wifi_start_mode",
-    "prg32_wifi_current_mode",
-    "prg32_wifi_current_ip",
-    "prg32_wifi_current_ssid",
-    "prg32_wifi_setup_requested",
-    "prg32_wifi_setup_run",
-    "prg32_multiplayer_init",
-    "prg32_multiplayer_available",
-    "prg32_multiplayer_join",
-    "prg32_multiplayer_leave",
-    "prg32_multiplayer_tick",
-    "prg32_multiplayer_set_local_state",
-    "prg32_multiplayer_set_input",
-    "prg32_multiplayer_get_peer_count",
-    "prg32_multiplayer_get_peer",
-    "prg32_cart_stored_count",
-    "prg32_cart_get_slot_info",
-    "prg32_cart_select_slot",
-    "prg32_console_clear",
-    "prg32_console_putc",
-    "prg32_console_write",
-    "prg32_console_hex32",
-    "prg32_gfx_clear",
-    "prg32_gfx_present",
-    "prg32_gfx_pixel",
-    "prg32_gfx_rect",
-    "prg32_gfx_text8",
-    "prg32_splash_draw",
-    "prg32_splash_show",
-    "prg32_splash_show_default",
-    "prg32_debug_overlay_draw",
-    "prg32_keyboard_init",
-    "prg32_keyboard_update",
-    "prg32_keyboard_draw",
-    "prg32_text_input",
-    "prg32_tile_clear",
-    "prg32_tile_define",
-    "prg32_tile_put",
-    "prg32_tile_present",
-    "prg32_playfield_clear",
-    "prg32_playfield_put",
-    "prg32_playfield_get",
-    "prg32_playfield_scroll",
-    "prg32_playfield_scroll_by",
-    "prg32_playfield_parallax",
-    "prg32_playfield_camera",
-    "prg32_playfield_camera_x",
-    "prg32_playfield_camera_y",
-    "prg32_playfield_draw",
-    "prg32_playfield_draw_dual",
-    "prg32_playfield_present",
-    "prg32_platform_tile_flags",
-    "prg32_platform_tile_flags_get",
-    "prg32_platform_tile_at",
-    "prg32_platform_solid_at",
-    "prg32_platform_actor_init",
-    "prg32_platform_actor_move",
-    "prg32_platform_actor_step",
-    "prg32_platform_camera_follow",
-    "prg32_sprite_hitbox",
-    "prg32_sprite_draw_8x8",
-    "prg32_sprite_draw_16x16",
-    "prg32_sprite_anim_frame",
-    "prg32_sprite_draw_frame",
-    "prg32_sprite_anim_init",
-    "prg32_sprite_anim_update",
-    "prg32_sprite_anim_draw",
-    "prg32_score_submit",
-]
 
 
 def run(cmd: list[str], cwd: Path | None = None) -> str:
@@ -216,6 +132,81 @@ def catalog_items(body) -> list[dict]:
             if isinstance(value, list):
                 return [item for item in value if isinstance(item, dict)]
     return []
+
+
+def cartridge_contract(data: bytes) -> dict:
+    if len(data) < CART_HEADER.size:
+        raise SystemExit("cartridge is too small to contain a PRG32 header")
+    fields = CART_HEADER.unpack_from(data, 0)
+    if fields[0] != CART_MAGIC:
+        raise SystemExit("cartridge is not a PRG32 .prg32 image")
+    header = {
+        "abi_major": fields[1],
+        "abi_minor": fields[2],
+        "header_size": fields[3],
+        "flags": fields[4],
+        "load_addr": fields[5],
+        "code_size": fields[6],
+        "mem_size": fields[7],
+        "import_model": PRG32_IMPORT_MODEL_LEGACY_ABSOLUTE,
+        "abi_hash": None,
+        "required_features": 0,
+    }
+    if header["header_size"] >= CART_HEADER_V2.size:
+        if len(data) < CART_HEADER_V2.size:
+            raise SystemExit("cartridge v2 header is truncated")
+        v2 = CART_HEADER_V2.unpack_from(data, 0)
+        header.update({
+            "abi_hash": v2[13],
+            "required_features": v2[14],
+            "import_model": v2[19],
+        })
+    return header
+
+
+def validate_cartridge_contract(
+    data: bytes,
+    *,
+    runtime: dict | None = None,
+    context: str = "cartridge",
+) -> None:
+    h = cartridge_contract(data)
+    expected_major = int((runtime or {}).get("cart_abi_major", CART_ABI_MAJOR))
+    expected_hash = int((runtime or {}).get("cart_abi_hash", ABI_HASH))
+    default_features = 0
+    for bit in FEATURE_BITS.values():
+        default_features |= int(bit)
+    provided_features = int((runtime or {}).get("cart_abi_features", default_features))
+    load_addr = int((runtime or {}).get("cart_load_addr", FALLBACK_CART_LOAD_ADDR))
+    if h["abi_major"] != expected_major:
+        raise SystemExit(
+            f"{context} rejected: cartridge ABI major {h['abi_major']} "
+            f"is not compatible with runtime ABI major {expected_major}"
+        )
+    if h["import_model"] == PRG32_IMPORT_MODEL_ABI_TABLE:
+        if h["abi_hash"] != expected_hash:
+            raise SystemExit(
+                f"{context} rejected: portable ABI hash "
+                f"0x{int(h['abi_hash'] or 0):08x} does not match runtime "
+                f"0x{expected_hash:08x}; rebuild the cartridge with this PRG32 checkout"
+            )
+        missing = int(h["required_features"]) & ~provided_features
+        if missing:
+            raise SystemExit(
+                f"{context} rejected: cartridge requires unsupported ABI "
+                f"feature bits 0x{missing:08x}"
+            )
+        return
+    if h["import_model"] != PRG32_IMPORT_MODEL_LEGACY_ABSOLUTE:
+        raise SystemExit(
+            f"{context} rejected: unsupported cartridge import model {h['import_model']}"
+        )
+    if h["load_addr"] != load_addr:
+        raise SystemExit(
+            f"{context} rejected: legacy cartridge was linked for "
+            f"0x{h['load_addr']:08x}, but this runtime loads cartridges at "
+            f"0x{load_addr:08x}; rebuild with --portable or against this firmware"
+        )
 
 
 def multipart_request(url: str,
@@ -357,6 +348,7 @@ def runtime_from_elf(path: Path, tool_prefix: str) -> dict:
         )
     return {
         "cart_load_addr": nm["prg32_cart_exec"],
+        "cart_max_size": FALLBACK_CART_MAX_SIZE,
         "cart_ram_size": ram_size,
         "imports": {name: nm[name] for name in IMPORT_NAMES},
     }
@@ -369,6 +361,11 @@ def write_imports(path: Path, imports: dict[str, int]) -> None:
             raise SystemExit(f"runtime import missing: {name}")
         lines.append(f"PROVIDE({name} = 0x{int(imports[name]):08x});")
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def ensure_cart_max_size(data: bytes, max_size: int = FALLBACK_CART_MAX_SIZE) -> None:
+    if len(data) > max_size:
+        raise SystemExit(f"cartridge image is {len(data)} bytes, max is {max_size}")
 
 
 def write_linker(path: Path, load_addr: int, init_symbol: str) -> None:
@@ -419,6 +416,64 @@ SECTIONS
     )
 
 
+def write_portable_stubs(path: Path,
+                         init_sym: str,
+                         update_sym: str,
+                         draw_sym: str) -> None:
+    lines = [
+        "/* Generated by tools/prg32_game.py for one portable cartridge build. */",
+        ".section .data.__prg32_abi,\"aw\",@progbits",
+        ".globl __prg32_abi",
+        ".align 2",
+        "__prg32_abi:",
+        "    .word 0",
+        ".section .text.prg32_abi_stubs,\"ax\",@progbits",
+        ".option push",
+        ".option norelax",
+    ]
+    for index, name in enumerate(IMPORT_NAMES):
+        offset = 20 + index * 4
+        lines.extend([
+            f".globl {name}",
+            f"{name}:",
+            "    la t0, __prg32_abi",
+            "    lw t0, 0(t0)",
+            f"    lw t1, {offset}(t0)",
+            "    jr t1",
+        ])
+    for entry_name, target in (
+        ("prg32_entry_init", init_sym),
+        ("prg32_entry_update", update_sym),
+        ("prg32_entry_draw", draw_sym),
+    ):
+        lines.extend([
+            f".globl {entry_name}",
+            f"{entry_name}:",
+            "    addi sp, sp, -16",
+            "    sw ra, 12(sp)",
+            "    la t0, __prg32_abi",
+            "    sw a0, 0(t0)",
+            f"    call {target}",
+            "    lw ra, 12(sp)",
+            "    addi sp, sp, 16",
+            "    ret",
+        ])
+    lines.extend([".option pop", ""])
+    path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def feature_mask(names: list[str]) -> int:
+    mask = 0
+    for name in names:
+        key = name.lower().replace("-", "_")
+        if key not in FEATURE_BITS:
+            raise SystemExit(
+                f"unknown feature {name!r}; choices: {', '.join(sorted(FEATURE_BITS))}"
+            )
+        mask |= int(FEATURE_BITS[key])
+    return mask
+
+
 def detect_entries(symbols: dict[str, int], prefix: str | None) -> tuple[str, str, str]:
     if prefix:
         entries = (f"{prefix}_init", f"{prefix}_update", f"{prefix}_draw")
@@ -442,12 +497,21 @@ def detect_entries(symbols: dict[str, int], prefix: str | None) -> tuple[str, st
 
 
 def build(args: argparse.Namespace) -> None:
-    if args.runtime_url:
+    if args.portable and args.legacy_absolute_imports:
+        raise SystemExit("--portable and --legacy-absolute-imports are mutually exclusive")
+    if args.portable:
+        runtime = {
+            "cart_load_addr": FALLBACK_CART_LOAD_ADDR,
+            "cart_ram_size": FALLBACK_CART_RAM_SIZE,
+            "cart_max_size": FALLBACK_CART_MAX_SIZE,
+            "imports": {},
+        }
+    elif args.runtime_url:
         runtime = fetch_runtime(args.runtime_url)
     elif args.firmware_elf:
         runtime = runtime_from_elf(Path(args.firmware_elf), args.tool_prefix)
     else:
-        raise SystemExit("build requires --runtime-url or --firmware-elf")
+        raise SystemExit("build requires --portable, --runtime-url, or --firmware-elf")
 
     load_addr = int(runtime["cart_load_addr"])
     if "cart_ram_size" not in runtime:
@@ -457,7 +521,10 @@ def build(args: argparse.Namespace) -> None:
             file=sys.stderr,
         )
     ram_size = int(runtime.get("cart_ram_size", FALLBACK_CART_RAM_SIZE))
-    imports = {k: int(v) for k, v in runtime["imports"].items()}
+    max_size = int(runtime.get("cart_max_size", FALLBACK_CART_MAX_SIZE))
+    imports = {k: int(v) for k, v in runtime.get("imports", {}).items()}
+    required_features = feature_mask(args.required_feature)
+    optional_features = feature_mask(args.optional_feature)
 
     source = Path(args.source)
     out = Path(args.out)
@@ -471,6 +538,8 @@ def build(args: argparse.Namespace) -> None:
         raw = tmp / "game.bin"
         imports_ld = tmp / "imports.ld"
         linker_ld = tmp / "cart.ld"
+        stubs_s = tmp / "portable_stubs.S"
+        stubs_o = tmp / "portable_stubs.o"
 
         compile_cmd = [
             args.tool_prefix + "gcc",
@@ -489,6 +558,11 @@ def build(args: argparse.Namespace) -> None:
                 "-fno-builtin",
                 "-Os",
             ]
+            if args.portable:
+                compile_cmd[1:1] = [
+                    "-mcmodel=medany",
+                    "-msmall-data-limit=0",
+                ]
         else:
             compile_cmd[1:1] = ["-x", "assembler-with-cpp"]
 
@@ -497,18 +571,41 @@ def build(args: argparse.Namespace) -> None:
         obj_symbols = parse_nm(run([args.tool_prefix + "nm", "--defined-only", str(obj)]))
         init_sym, update_sym, draw_sym = detect_entries(obj_symbols, args.entry_prefix)
 
-        write_imports(imports_ld, imports)
-        write_linker(linker_ld, load_addr, init_sym)
+        link_objects = [str(obj)]
+        linker_scripts = ["-Wl,-T," + str(linker_ld)]
+        entry_init_sym = init_sym
+        entry_update_sym = update_sym
+        entry_draw_sym = draw_sym
+        if args.portable:
+            write_portable_stubs(stubs_s, init_sym, update_sym, draw_sym)
+            run([
+                args.tool_prefix + "gcc",
+                "-mcmodel=medany",
+                "-msmall-data-limit=0",
+                "-march=" + args.march,
+                "-mabi=" + args.mabi,
+                "-x", "assembler-with-cpp",
+                "-c", str(stubs_s),
+                "-o", str(stubs_o),
+            ])
+            link_objects.append(str(stubs_o))
+            entry_init_sym = "prg32_entry_init"
+            entry_update_sym = "prg32_entry_update"
+            entry_draw_sym = "prg32_entry_draw"
+        else:
+            write_imports(imports_ld, imports)
+            linker_scripts.append("-Wl,-T," + str(imports_ld))
+        write_linker(linker_ld, load_addr, entry_init_sym)
         run([
             args.tool_prefix + "gcc",
             "-nostdlib",
             "-march=" + args.march,
             "-mabi=" + args.mabi,
+            *(["-mcmodel=medany", "-msmall-data-limit=0"] if args.portable else []),
             "-Wl,--no-relax",
-            "-Wl,-T," + str(linker_ld),
-            "-Wl,-T," + str(imports_ld),
+            *linker_scripts,
             "-Wl,-Map," + str(tmp / "game.map"),
-            str(obj),
+            *link_objects,
             "-o", str(elf),
         ])
         linked_symbols = parse_nm(run([args.tool_prefix + "nm", "--defined-only", str(elf)]))
@@ -532,6 +629,9 @@ def build(args: argparse.Namespace) -> None:
             flags |= PRG32_CART_FLAG_AUDIO_BLOCK
         if args.multiplayer:
             flags |= PRG32_CART_FLAG_MULTIPLAYER
+            required_features |= FEATURE_BITS["multiplayer"]
+        if args.portable:
+            flags |= PRG32_CART_FLAG_ABI_TABLE
         start = linked_symbols["__cart_start"]
         end = linked_symbols["__cart_end"]
         mem_size = end - start
@@ -541,16 +641,17 @@ def build(args: argparse.Namespace) -> None:
             raise SystemExit("internal error: binary is larger than cartridge memory")
 
         entries = {
-            "init": linked_symbols[init_sym] - load_addr,
-            "update": linked_symbols[update_sym] - load_addr,
-            "draw": linked_symbols[draw_sym] - load_addr,
+            "init": linked_symbols[entry_init_sym] - load_addr,
+            "update": linked_symbols[entry_update_sym] - load_addr,
+            "draw": linked_symbols[entry_draw_sym] - load_addr,
         }
         crc = binascii.crc32(code) & 0xffffffff
-        header = CART_HEADER.pack(
+        header_struct = CART_HEADER_V2 if args.portable else CART_HEADER
+        header_values = [
             CART_MAGIC,
             CART_ABI_MAJOR,
             CART_ABI_MINOR,
-            CART_HEADER.size,
+            header_struct.size,
             flags,
             load_addr,
             len(code),
@@ -560,18 +661,36 @@ def build(args: argparse.Namespace) -> None:
             entries["draw"],
             crc,
             name_bytes + b"\0" * (32 - len(name_bytes)),
-        )
+        ]
+        if args.portable:
+            header_values.extend([
+                ABI_HASH,
+                required_features,
+                optional_features,
+                0,
+                0,
+                0,
+                PRG32_IMPORT_MODEL_ABI_TABLE,
+            ])
+        header = header_struct.pack(*header_values)
+        image = header + code + audio_block
+        if len(image) > max_size:
+            raise SystemExit(f"cartridge image is {len(image)} bytes, max is {max_size}")
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_bytes(header + code + audio_block)
+        out.write_bytes(image)
 
     print(
         f"built {out} name={name} load=0x{load_addr:08x} "
-        f"code={len(code)} mem={mem_size} audio={len(audio_block)}"
+        f"code={len(code)} mem={mem_size} audio={len(audio_block)} "
+        f"import_model={'abi-table' if args.portable else 'legacy-absolute'}"
     )
 
 
 def upload(args: argparse.Namespace) -> None:
     data = Path(args.cartridge).read_bytes()
+    ensure_cart_max_size(data)
+    runtime = fetch_runtime(args.url)
+    validate_cartridge_contract(data, runtime=runtime, context="upload")
     endpoint = args.url.rstrip("/") + "/api/games?slot=" + args.slot
     request = urllib.request.Request(
         endpoint,
@@ -686,6 +805,12 @@ def store_download(args: argparse.Namespace) -> None:
         raise SystemExit(f"download failed: HTTP {exc.code}: {body}") from exc
     except urllib.error.URLError as exc:
         raise SystemExit(f"download failed: {exc}") from exc
+    data = out.read_bytes()
+    try:
+        validate_cartridge_contract(data, context="store download")
+    except SystemExit:
+        out.unlink(missing_ok=True)
+        raise
     print(f"saved {out}")
 
 
@@ -744,13 +869,16 @@ def publish(args: argparse.Namespace) -> None:
             if args.colophon:
                 zf.write(args.colophon, Path(args.colophon).name)
         response = post_multipart(
-            store_url(args) + "/api/publish",
+            store_url(args) + "/api/publish/bundle",
             {},
             {"bundle": (bundle.name, bundle.read_bytes(), "application/zip")},
             store_token(args),
         )
     print(json.dumps(response, indent=2, sort_keys=True))
-    print("✓ Published")
+    if response.get("status") == "pending" or response.get("review_required"):
+        print("Submitted for review")
+    else:
+        print("Published")
 
 
 def pack_bundle(args: argparse.Namespace) -> None:
@@ -796,11 +924,15 @@ def publish_bundle(args: argparse.Namespace) -> None:
     )
     published = response.get("published") or response.get("submitted") or response
     print(json.dumps(published, indent=2, sort_keys=True))
+    if response.get("status") == "pending" or response.get("review_required"):
+        print("Submitted for review")
 
 
 def upload_qemu(args: argparse.Namespace) -> None:
     flash = Path(args.flash)
     data = Path(args.cartridge).read_bytes()
+    ensure_cart_max_size(data)
+    validate_cartridge_contract(data, context="QEMU staging")
     partitions = Path(args.partitions)
     cart_offset, cart_size = read_partition_slot(partitions, args.slot)
     if len(data) > cart_size:
@@ -908,7 +1040,40 @@ def attach_metadata(args: argparse.Namespace) -> None:
 
 def inspect_metadata(args: argparse.Namespace) -> None:
     parsed = parse_file(args.cartridge)
-    print(json.dumps(summary_dict(parsed), indent=2, sort_keys=True))
+    summary = summary_dict(parsed)
+    data = Path(args.cartridge).read_bytes()
+    if len(data) >= CART_HEADER.size:
+        fields = CART_HEADER.unpack_from(data, 0)
+        header_size = fields[3]
+        flags = fields[4]
+        header = {
+            "abi_major": fields[1],
+            "abi_minor": fields[2],
+            "header_size": header_size,
+            "flags": flags,
+            "load_addr": fields[5],
+            "code_size": fields[6],
+            "mem_size": fields[7],
+            "import_model": "legacy-absolute",
+        }
+        if header_size >= CART_HEADER_V2.size and len(data) >= CART_HEADER_V2.size:
+            v2 = CART_HEADER_V2.unpack_from(data, 0)
+            import_model = v2[19]
+            header.update({
+                "abi_hash": f"0x{v2[13]:08x}",
+                "required_features": f"0x{v2[14]:08x}",
+                "optional_features": f"0x{v2[15]:08x}",
+                "isa_flags": f"0x{v2[16]:08x}",
+                "relocation_offset": v2[17],
+                "relocation_count": v2[18],
+                "import_model": (
+                    "abi-table"
+                    if import_model == PRG32_IMPORT_MODEL_ABI_TABLE
+                    else "legacy-absolute"
+                ),
+            })
+        summary["header"] = header
+    print(json.dumps(summary, indent=2, sort_keys=True))
 
 
 def main(argv: list[str]) -> int:
@@ -928,6 +1093,28 @@ def main(argv: list[str]) -> int:
     p.add_argument("--entry-prefix")
     p.add_argument("--runtime-url")
     p.add_argument("--firmware-elf")
+    p.add_argument(
+        "--portable",
+        action="store_true",
+        help="build a firmware-portable ABI-table cartridge",
+    )
+    p.add_argument(
+        "--legacy-absolute-imports",
+        action="store_true",
+        help="build the legacy firmware-specific absolute-import cartridge",
+    )
+    p.add_argument(
+        "--required-feature",
+        action="append",
+        default=[],
+        help="portable ABI feature required by this cartridge",
+    )
+    p.add_argument(
+        "--optional-feature",
+        action="append",
+        default=[],
+        help="portable ABI feature this cartridge can use when available",
+    )
     p.add_argument(
         "--audio-block",
         help="optional PRG32 AUDIO block produced by tools/prg32audio_pack.py",
@@ -949,7 +1136,7 @@ def main(argv: list[str]) -> int:
 
     p = sub.add_parser("upload-qemu", help="stage a cartridge into QEMU flash")
     p.add_argument("cartridge")
-    p.add_argument("--flash", default="build-qemu/flash_image.bin")
+    p.add_argument("--flash", default="build-qemu/qemu_flash.bin")
     p.add_argument("--partitions", default=str(DEFAULT_PARTITION_TABLE))
     p.add_argument("--slot", default=DEFAULT_CART_SLOT)
     p.set_defaults(func=upload_qemu)
@@ -1008,9 +1195,13 @@ def main(argv: list[str]) -> int:
 
     p = sub.add_parser("publish", help="build and publish a cartridge bundle")
     p.add_argument("source")
-    p.add_argument("--firmware-elf", required=True)
+    p.add_argument("--firmware-elf")
     p.add_argument("--entry-prefix", required=True)
     p.add_argument("--name", required=True)
+    p.add_argument("--portable", action="store_true")
+    p.add_argument("--legacy-absolute-imports", action="store_true")
+    p.add_argument("--required-feature", action="append", default=[])
+    p.add_argument("--optional-feature", action="append", default=[])
     p.add_argument("--store-url")
     p.add_argument("--architecture", choices=sorted(ARCHITECTURE_PROFILES))
     p.add_argument("--id")

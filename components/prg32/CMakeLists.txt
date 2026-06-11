@@ -27,6 +27,7 @@ endif()
 idf_component_register(
     SRCS
         "prg32_abi_exports.c"
+        "prg32_abi_table.c"
         "prg32_audio.c"
         "assets/prg32_splash_logo.c"
         "prg32_bands.c"
@@ -34,7 +35,6 @@ idf_component_register(
         "prg32_console.c"
         "prg32_controller.c"
         "prg32_debug_overlay.c"
-        "prg32_device_demo.c"
         "prg32_diag.c"
         "prg32_http_games.c"
         "prg32_http_scores.c"

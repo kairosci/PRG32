@@ -96,7 +96,7 @@ CONFIG_PRG32_METRICS_SERVER_URL="http://<server-ip>:8080"
 CONFIG_PRG32_METRICS_BOARD_ID="lab-board-01"
 CONFIG_PRG32_METRICS_SAMPLE_PERIOD_FRAMES=1
 CONFIG_PRG32_METRICS_UPLOAD_PERIOD_MS=5000
-CONFIG_PRG32_METRICS_QUEUE_LEN=512
+CONFIG_PRG32_METRICS_QUEUE_LEN=128
 ```
 
 For QEMU, use the QEMU build directory and decide whether the experiment is a
@@ -146,7 +146,7 @@ Use the same cartridge build command for every run in the series. Example:
 ```bash
 python3 tools/prg32_game.py build \
   examples/games/pong/graphics/game.S \
-  --firmware-elf build-esp32c6-metrics/PRG32.elf \
+  --portable \
   --entry-prefix pong_graphics \
   --name pong \
   --out build-esp32c6-metrics/pong.prg32
@@ -166,7 +166,7 @@ On Windows:
 ```bash
 python3 tools/prg32_game.py upload-qemu \
   build-qemu/pong.prg32 \
-  --flash build-qemu/flash_image.bin
+  --flash build-qemu/qemu_flash.bin
 ```
 
 On Linux or MacOS:

@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import argparse
 import importlib.util
+import io
 from pathlib import Path
+import contextlib
 import tempfile
 import unittest
 
@@ -94,18 +96,83 @@ not-a-symbol
         )
 
 
+class PortableHeaderTests(unittest.TestCase):
+    def test_portable_build_uses_position_tolerant_riscv_flags(self) -> None:
+        text = TOOL_PATH.read_text(encoding="utf-8")
+
+        self.assertIn('"-mcmodel=medany"', text)
+        self.assertIn('"-msmall-data-limit=0"', text)
+
+    def test_v2_header_records_abi_table_import_model(self) -> None:
+        header = prg32_game.CART_HEADER_V2.pack(
+            prg32_game.CART_MAGIC,
+            prg32_game.CART_ABI_MAJOR,
+            prg32_game.CART_ABI_MINOR,
+            prg32_game.CART_HEADER_V2.size,
+            prg32_game.PRG32_CART_FLAG_ABI_TABLE,
+            prg32_game.FALLBACK_CART_LOAD_ADDR,
+            4,
+            4,
+            0,
+            0,
+            0,
+            0,
+            b"test" + b"\0" * 28,
+            prg32_game.ABI_HASH,
+            prg32_game.FEATURE_BITS["audio"],
+            prg32_game.FEATURE_BITS["sprites"],
+            0,
+            0,
+            0,
+            prg32_game.PRG32_IMPORT_MODEL_ABI_TABLE,
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            cart = Path(tmp) / "portable.prg32"
+            cart.write_bytes(header + b"\0\0\0\0")
+            buf = io.StringIO()
+            args = argparse.Namespace(cartridge=str(cart))
+            with contextlib.redirect_stdout(buf):
+                prg32_game.inspect_metadata(args)
+        text = buf.getvalue()
+        self.assertIn('"import_model": "abi-table"', text)
+        self.assertIn(f'"abi_hash": "0x{prg32_game.ABI_HASH:08x}"', text)
+
+
 class QemuUploadTests(unittest.TestCase):
     def test_upload_qemu_stages_cartridge_at_partition_offset(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)
-            flash = tmp_path / "flash_image.bin"
+            flash = tmp_path / "qemu_flash.bin"
             cart = tmp_path / "game.prg32"
             partitions = tmp_path / "partitions.csv"
 
-            flash.write_bytes(b"\x00" * 64)
-            cart.write_bytes(b"PRG2")
+            payload = b"\0\0\0\0"
+            header = prg32_game.CART_HEADER_V2.pack(
+                prg32_game.CART_MAGIC,
+                prg32_game.CART_ABI_MAJOR,
+                prg32_game.CART_ABI_MINOR,
+                prg32_game.CART_HEADER_V2.size,
+                prg32_game.PRG32_CART_FLAG_ABI_TABLE,
+                prg32_game.FALLBACK_CART_LOAD_ADDR,
+                len(payload),
+                len(payload),
+                0,
+                0,
+                0,
+                0,
+                b"test" + b"\0" * 28,
+                prg32_game.ABI_HASH,
+                0,
+                0,
+                0,
+                0,
+                0,
+                prg32_game.PRG32_IMPORT_MODEL_ABI_TABLE,
+            )
+            flash.write_bytes(b"\x00" * 256)
+            cart.write_bytes(header + payload)
             partitions.write_text(
-                "cart0, data, 0x40, 0x10, 8,\n",
+                "cart0, data, 0x40, 0x10, 128,\n",
                 encoding="utf-8",
             )
 
@@ -119,7 +186,8 @@ class QemuUploadTests(unittest.TestCase):
 
             data = flash.read_bytes()
             self.assertEqual(data[0x10:0x14], b"PRG2")
-            self.assertEqual(data[0x14:0x18], b"\xff" * 4)
+            erased = data[0x10 + len(header) + len(payload):0x10 + 128]
+            self.assertEqual(erased, b"\xff" * len(erased))
 
 
 class DoctorTests(unittest.TestCase):

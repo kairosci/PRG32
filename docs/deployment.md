@@ -39,8 +39,12 @@ boot cartridge.
 In setup mode, choose access-point mode for the standard cartridge upload
 workflow, or infrastructure mode to scan nearby SSIDs and connect the board to
 an existing network. The same setup menu can launch the audio setup page, the
-developer band menu, the about screen, and the device demo. With no cartridge
-installed, the firmware starts the upload AP and waits in setup.
+developer band menu, the performance test, and the about screen. With no
+cartridge installed, the firmware starts the upload AP and waits in setup.
+
+The device smoke test is maintained as the external
+[DeviceDemo cartridge](https://github.com/riscv-prg32/DeviceDemo). Build and
+upload that cartridge when a classroom deployment needs the former setup demo.
 
 ## Flash once, upload games
 
@@ -57,7 +61,7 @@ Build and upload a game:
 ```bash
 python3 tools/prg32_game.py build \
   examples/games/asteroids/graphics/game.S \
-  --firmware-elf build-esp32c6/PRG32.elf \
+  --portable \
   --entry-prefix asteroids_graphics \
   --name asteroids \
   --out build-esp32c6/asteroids.prg32
@@ -106,7 +110,7 @@ the 320x200 viewport. The normal hardware build keeps the ESP32-C6 target and
 ILI9341 SPI display backend.
 
 QEMU cartridge testing uses the same `.prg32` package but stages it into
-`build-qemu/flash_image.bin`:
+`build-qemu/qemu_flash.bin`:
 
 ```bash
 python3 tools/prg32_game.py upload-qemu build-qemu/asteroids.prg32

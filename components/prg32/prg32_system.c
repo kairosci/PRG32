@@ -1,5 +1,6 @@
 #include "prg32.h"
 #include "prg32_config.h"
+#include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include <stdbool.h>
@@ -10,7 +11,8 @@ void prg32_display_init(void);
 void prg32_input_init(void);
 void prg32_audio_pwm_init(void);
 void prg32_abi_exports_keep(void);
-void prg32_device_demo_run(void);
+
+#include "nvs_flash.h"
 
 #ifndef PRG32_BOOT_SETUP_MODE
 #define PRG32_BOOT_SETUP_MODE 0
@@ -46,9 +48,10 @@ typedef enum {
     SETUP_OPTION_RUN_CART,
     SETUP_OPTION_DEFAULT_CART,
     SETUP_OPTION_WIFI,
+    SETUP_OPTION_STORE_CONFIG,
+    SETUP_OPTION_STORE_BROWSE,
     SETUP_OPTION_AUDIO,
     SETUP_OPTION_DEVELOPER,
-    SETUP_OPTION_DEMO,
     SETUP_OPTION_PERFORMANCE,
     SETUP_OPTION_ABOUT,
     SETUP_OPTION_EXIT,
@@ -85,6 +88,41 @@ static void draw_setup_status(int y) {
     }
 }
 
+static unsigned long bytes_to_kib(size_t bytes) {
+    return (unsigned long)((bytes + 1023u) / 1024u);
+}
+
+static size_t setup_available_cart_flash(void) {
+    size_t available = 0;
+    for (uint8_t slot = 0; slot < PRG32_CART_SLOT_COUNT; ++slot) {
+        size_t slot_size = prg32_cart_slot_size(slot);
+        prg32_cart_info_t info;
+        if (slot_size == 0 ||
+            prg32_cart_get_slot_info(slot, &info) != 0) {
+            continue;
+        }
+        if (!info.stored) {
+            available += slot_size;
+            continue;
+        }
+        size_t used = (size_t)info.code_size + (size_t)info.audio_size;
+        if (used < slot_size) {
+            available += slot_size - used;
+        }
+    }
+    return available;
+}
+
+static void draw_setup_resources(int y) {
+    char line[48];
+    snprintf(line,
+             sizeof(line),
+             "RAM: %luK  CART FLASH: %luK",
+             bytes_to_kib(esp_get_free_heap_size()),
+             bytes_to_kib(setup_available_cart_flash()));
+    prg32_gfx_text8(8, y, line, PRG32_COLOR_YELLOW, 0);
+}
+
 static int stored_slots(uint8_t *slots, int max_slots) {
     int count = 0;
     for (uint8_t slot = 0; slot < PRG32_CART_SLOT_COUNT; ++slot) {
@@ -111,6 +149,28 @@ static void show_setup_message(const char *title,
     if (ms > 0) {
         vTaskDelay(pdMS_TO_TICKS(ms));
     }
+}
+
+static void start_performance_http_api(void) {
+    if (prg32_wifi_current_mode() != PRG32_WIFI_MODE_OFF) {
+        prg32_scores_api_start();
+        return;
+    }
+
+#if PRG32_WIFI_AP_ENABLE
+    prg32_wifi_config_t config = {
+        .mode = PRG32_WIFI_MODE_AP,
+    };
+    snprintf(config.ap_ssid, sizeof(config.ap_ssid), "%s", PRG32_WIFI_AP_SSID);
+    snprintf(config.ap_password,
+             sizeof(config.ap_password),
+             "%s",
+             PRG32_WIFI_AP_PASSWORD);
+    prg32_wifi_start_mode(&config);
+#else
+    prg32_wifi_scores_init();
+#endif
+    prg32_scores_api_start();
 }
 
 static void draw_cartridge_status(int y) {
@@ -633,6 +693,8 @@ static void developer_menu(void) {
 static void about_menu(void) {
     prg32_input_wait_released(SETUP_KEYS);
     uint32_t last = 0;
+    char version_line[40];
+    snprintf(version_line, sizeof(version_line), "FIRMWARE %s", PRG32_FIRMWARE_VERSION);
     while (1) {
         uint32_t input = prg32_input_read_menu();
         if (((input & PRG32_BTN_A) && !(last & PRG32_BTN_A)) ||
@@ -645,6 +707,7 @@ static void about_menu(void) {
         prg32_gfx_clear(PRG32_COLOR_BLACK);
         prg32_gfx_text8(8, 8, "ABOUT PRG32", PRG32_COLOR_WHITE, 0);
         prg32_gfx_text8(8, 32, "RETRO GAMING & CODING", PRG32_COLOR_CYAN, 0);
+        prg32_gfx_text8(8, 48, version_line, PRG32_COLOR_GREEN, 0);
         prg32_gfx_text8(8, 64, "AUTHORS AND CONTRIBUTORS", PRG32_COLOR_YELLOW, 0);
         prg32_gfx_text8(8, 88, "RAFFAELE MONTELLA", PRG32_COLOR_WHITE, 0);
         prg32_gfx_text8(8, 104, "UNIPARTHENOPE", PRG32_COLOR_GREEN, 0);
@@ -665,7 +728,7 @@ static int setup_menu(void) {
     printf("setup_menu => input_wait_released(SETUP_KEYS)\n");
     prg32_input_wait_released(SETUP_KEYS);
     while (1) {
-        setup_option_t options[9];
+        setup_option_t options[11];
         int option_count = 0;
         printf("setup_menu => prg32_cart_stored_count\n");
         int cart_count = prg32_cart_stored_count();
@@ -684,16 +747,20 @@ static int setup_menu(void) {
             "WIFI SETUP",
         };
         options[option_count++] = (setup_option_t){
+            SETUP_OPTION_STORE_CONFIG,
+            "CARTRIDGE STORE",
+        };
+        options[option_count++] = (setup_option_t){
+            SETUP_OPTION_STORE_BROWSE,
+            "BROWSE STORE",
+        };
+        options[option_count++] = (setup_option_t){
             SETUP_OPTION_AUDIO,
             "AUDIO SETUP",
         };
         options[option_count++] = (setup_option_t){
             SETUP_OPTION_DEVELOPER,
             "DEVELOPER MENU",
-        };
-        options[option_count++] = (setup_option_t){
-            SETUP_OPTION_DEMO,
-            "DEVICE DEMO",
         };
         options[option_count++] = (setup_option_t){
             SETUP_OPTION_PERFORMANCE,
@@ -753,6 +820,17 @@ static int setup_menu(void) {
                     prg32_scores_api_start();
                     break;
                 }
+                if (selected == SETUP_OPTION_STORE_CONFIG) {
+                    prg32_setup_store_run();
+                    break;
+                }
+                if (selected == SETUP_OPTION_STORE_BROWSE) {
+                    prg32_setup_store_browse_run();
+                    if (prg32_cart_is_loaded()) {
+                        return 0;
+                    }
+                    break;
+                }
                 if (selected == SETUP_OPTION_AUDIO) {
                     audio_menu();
                     break;
@@ -761,13 +839,8 @@ static int setup_menu(void) {
                     developer_menu();
                     break;
                 }
-                if (selected == SETUP_OPTION_DEMO) {
-                    prg32_device_demo_run();
-                    break;
-                }
                 if (selected == SETUP_OPTION_PERFORMANCE) {
-                    prg32_wifi_scores_init();
-                    prg32_scores_api_start();
+                    start_performance_http_api();
                     prg32_performance_test_run();
                     break;
                 }
@@ -786,9 +859,10 @@ static int setup_menu(void) {
             prg32_gfx_clear(PRG32_COLOR_BLACK);
             prg32_gfx_text8(8, 8, "PRG32 SETUP", PRG32_COLOR_WHITE, 0);
             draw_setup_status(28);
-            draw_cartridge_status(76);
+            draw_setup_resources(76);
+            draw_cartridge_status(92);
             for (int i = 0; i < option_count; ++i) {
-                int y = 102 + i * 14;
+                int y = 120 + i * 11;
                 prg32_gfx_text8(8, y, i == choice ? ">" : " ", PRG32_COLOR_GREEN, 0);
                 prg32_gfx_text8(24, y, options[i].label, PRG32_COLOR_WHITE, 0);
             }
@@ -817,7 +891,17 @@ void prg32_init(void) {
     prg32_splash_show_default();
     printf("prg32_init => prg32_input_init()\n");
     prg32_input_init();
-    prg32_multiplayer_init();
+    esp_err_t nvs_err = nvs_flash_init();
+    if (nvs_err == ESP_ERR_NVS_NO_FREE_PAGES || nvs_err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        nvs_flash_erase();
+        nvs_flash_init();
+    }
+#ifdef PRG32_STORE_SERVER_URL
+    char current_url[PRG32_STORE_URL_MAX_LEN];
+    if (prg32_store_url_get(current_url, sizeof(current_url)) != 0) {
+        prg32_store_url_set(PRG32_STORE_SERVER_URL);
+    }
+#endif
     printf("prg32_init => prg32_abi_exports_keep()\n");
     prg32_abi_exports_keep();
     printf("prg32_init => prg32_cart_init()\n");
@@ -842,12 +926,10 @@ void prg32_init(void) {
     }
     if (setup_requested) {
         prg32_gfx_set_fullscreen(1);
-        if (stored_count == 0) {
-            printf("prg32_init => wifi_scores_init()\n");
-            prg32_wifi_scores_init();
-            printf("prg32_init => scores_api_start()\n");
-            prg32_scores_api_start();
-        }
+        printf("prg32_init => wifi_scores_init()\n");
+        prg32_wifi_scores_init();
+        printf("prg32_init => scores_api_start()\n");
+        prg32_scores_api_start();
         printf("prg32_init => setup_menu()\n");
         setup_menu();
     }
@@ -858,12 +940,11 @@ void prg32_init(void) {
     prg32_wifi_scores_init();
     prg32_scores_api_start();
 #endif
-
     printf("prg32_init => cart_is_loaded()\n");
     printf("prg32_init => cart_stored_count()\n");
     if (!prg32_cart_is_loaded() && prg32_cart_stored_count() > 0) {
         printf("prg32_init => autoload_cartridge()\n");
-        autoload_cartridge();
+        //autoload_cartridge();
     }
     prg32_gfx_set_fullscreen(0);
     prg32_gfx_clear(PRG32_COLOR_BLACK);

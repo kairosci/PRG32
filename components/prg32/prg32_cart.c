@@ -11,6 +11,7 @@
 #include "esp_log.h"
 #include "nvs.h"
 #include "nvs_flash.h"
+#include "esp_heap_caps.h"
 #include "esp_partition.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -19,6 +20,7 @@
 #define PRG32_CART_META_MAGIC_LEN 9
 
 typedef void (*prg32_cart_entry_t)(void);
+typedef void (*prg32_cart_abi_entry_t)(const prg32_abi_table_t *abi);
 
 typedef struct __attribute__((packed)) {
     char magic[PRG32_CART_META_MAGIC_LEN];
@@ -48,6 +50,7 @@ static const uint8_t g_cart_subtypes[PRG32_CART_SLOT_COUNT] = {
 static const esp_partition_t *g_cart_partitions[PRG32_CART_SLOT_COUNT];
 static SemaphoreHandle_t g_cart_lock;
 static prg32_cart_header_t g_header;
+static uint32_t g_import_model;
 static prg32_cart_entry_t g_init;
 static prg32_cart_entry_t g_update;
 static prg32_cart_entry_t g_draw;
@@ -265,8 +268,42 @@ static int validate_header(const prg32_cart_header_t *h,
         set_error("invalid cartridge header size");
         return -1;
     }
-    if (h->load_addr != (uint32_t)(uintptr_t)prg32_cart_exec) {
-        set_error("cartridge linked for a different runtime address");
+    uint32_t import_model = PRG32_IMPORT_MODEL_LEGACY_ABSOLUTE;
+    if (h->header_size >= sizeof(prg32_cart_header_v2_t)) {
+        const prg32_cart_header_v2_t *v2 = (const prg32_cart_header_v2_t *)h;
+        import_model = v2->import_model;
+        if (v2->abi_hash != PRG32_ABI_HASH) {
+            set_errorf("cartridge ABI hash mismatch expected=0x%08lx got=0x%08lx",
+                       (unsigned long)PRG32_ABI_HASH,
+                       (unsigned long)v2->abi_hash);
+            return -1;
+        }
+        if ((v2->required_features & ~prg32_abi_table.provided_features) != 0u) {
+            set_errorf("cartridge requires missing feature bits 0x%08lx",
+                       (unsigned long)(v2->required_features & ~prg32_abi_table.provided_features));
+            return -1;
+        }
+        if (import_model != PRG32_IMPORT_MODEL_LEGACY_ABSOLUTE &&
+            import_model != PRG32_IMPORT_MODEL_ABI_TABLE) {
+            set_errorf("unsupported cartridge import model %lu",
+                       (unsigned long)import_model);
+            return -1;
+        }
+        if (import_model == PRG32_IMPORT_MODEL_ABI_TABLE &&
+            (h->flags & PRG32_CART_FLAG_ABI_TABLE) == 0u) {
+            set_error("ABI-table cartridge is missing ABI flag");
+            return -1;
+        }
+    }
+    if (import_model == PRG32_IMPORT_MODEL_LEGACY_ABSOLUTE &&
+        h->load_addr != (uint32_t)(uintptr_t)prg32_cart_exec) {
+        set_error("legacy cartridge uses firmware-specific absolute imports; rebuild it with --portable");
+        return -1;
+    }
+    if (image_size > PRG32_CART_MAX_SIZE) {
+        set_errorf("cartridge image is too large image=%lu max=%lu",
+                   (unsigned long)image_size,
+                   (unsigned long)PRG32_CART_MAX_SIZE);
         return -1;
     }
     if (h->code_size == 0 || h->code_size > h->mem_size ||
@@ -342,6 +379,12 @@ static int load_image_locked(const void *image, size_t image_size) {
     __asm__ volatile("fence.i" ::: "memory");
 
     memcpy(&g_header, h, sizeof(g_header));
+    if (h->header_size >= sizeof(prg32_cart_header_v2_t)) {
+        const prg32_cart_header_v2_t *v2 = (const prg32_cart_header_v2_t *)h;
+        g_import_model = v2->import_model;
+    } else {
+        g_import_model = PRG32_IMPORT_MODEL_LEGACY_ABSOLUTE;
+    }
     if (audio_block && audio_size) {
         if (prg32_audio_load_block(audio_block, audio_size) != 0) {
             g_loaded = false;
@@ -419,20 +462,20 @@ int prg32_cart_load_stored(void) {
         set_errorf("no stored cartridge in %s", slot_name(g_current_slot));
         return -1;
     }
-    uint8_t *image = malloc(image_size);
+    uint8_t *image = heap_caps_malloc(image_size, MALLOC_CAP_8BIT);
     if (!image) {
         set_error("out of memory reading cartridge");
         return -1;
     }
     esp_err_t err = esp_partition_read(part, 0, image, image_size);
     if (err != ESP_OK) {
-        free(image);
+        heap_caps_free(image);
         set_error("failed to read stored cartridge");
         return -1;
     }
 
     if (lock_cart() != 0) {
-        free(image);
+        heap_caps_free(image);
         set_error("failed to lock cartridge runtime");
         return -1;
     }
@@ -441,7 +484,7 @@ int prg32_cart_load_stored(void) {
         g_stored = true;
     }
     unlock_cart();
-    free(image);
+    heap_caps_free(image);
     return rc;
 }
 
@@ -567,6 +610,77 @@ int prg32_cart_store_slot(uint8_t slot, const void *image, size_t image_size) {
 
     set_error("ok");
     ESP_LOGI(TAG, "cart store: done %s", slot_name(slot));
+    return 0;
+}
+
+size_t prg32_cart_slot_size(uint8_t slot) {
+    const esp_partition_t *part = cart_partition_by_slot(slot);
+    return part ? part->size : 0;
+}
+
+int prg32_cart_stream_begin(uint8_t slot, size_t image_size) {
+    if (slot >= PRG32_CART_SLOT_COUNT) {
+        set_error("invalid cartridge slot");
+        return -1;
+    }
+    const esp_partition_t *part = cart_partition_by_slot(slot);
+    if (!part) {
+        set_errorf("%s partition not found", slot_name(slot));
+        return -1;
+    }
+    if (image_size == 0 || image_size > PRG32_CART_MAX_SIZE ||
+        image_size > part->size) {
+        set_errorf("cartridge is larger than %s partition", slot_name(slot));
+        return -1;
+    }
+    if (lock_cart() != 0) {
+        set_error("failed to lock cartridge storage");
+        return -1;
+    }
+    esp_err_t err = esp_partition_erase_range(part, 0, part->size);
+    unlock_cart();
+    if (err != ESP_OK) {
+        set_errorf("failed to erase cartridge slot: %s", esp_err_to_name(err));
+        return -1;
+    }
+    set_error("ok");
+    return 0;
+}
+
+int prg32_cart_stream_write(uint8_t slot, size_t offset, const void *data, size_t len) {
+    if (slot >= PRG32_CART_SLOT_COUNT || !data || len == 0) {
+        set_error("invalid cartridge stream write");
+        return -1;
+    }
+    const esp_partition_t *part = cart_partition_by_slot(slot);
+    if (!part || offset > part->size || len > part->size - offset) {
+        set_error("cartridge stream write outside slot");
+        return -1;
+    }
+    if (lock_cart() != 0) {
+        set_error("failed to lock cartridge storage");
+        return -1;
+    }
+    esp_err_t err = esp_partition_write(part, offset, data, len);
+    unlock_cart();
+    if (err != ESP_OK) {
+        set_errorf("failed to write cartridge chunk: %s", esp_err_to_name(err));
+        return -1;
+    }
+    set_error("ok");
+    return 0;
+}
+
+int prg32_cart_stream_end(uint8_t slot, size_t image_size) {
+    prg32_cart_header_t stored_header;
+    size_t stored_size = 0;
+    if (read_stored_header(slot, &stored_header, &stored_size, NULL) != 0 ||
+        stored_size != image_size) {
+        set_error("failed to verify streamed cartridge");
+        return -1;
+    }
+    set_error("ok");
+    ESP_LOGI(TAG, "cart stream: done %s size=%lu", slot_name(slot), (unsigned long)image_size);
     return 0;
 }
 
@@ -749,7 +863,11 @@ static int call_entry(prg32_cart_entry_t entry) {
         unlock_cart();
         return -1;
     }
-    entry();
+    if (g_import_model == PRG32_IMPORT_MODEL_ABI_TABLE) {
+        ((prg32_cart_abi_entry_t)entry)(&prg32_abi_table);
+    } else {
+        entry();
+    }
     unlock_cart();
     return 0;
 }

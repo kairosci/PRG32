@@ -9,12 +9,11 @@ PRG32 has two related development loops:
 - resident firmware development, where `idf.py` or PlatformIO builds the PRG32
   runtime for the board or QEMU;
 - cartridge game development, where `tools/prg32_game.py` links a small RISC-V
-  assembly or C program against a resident firmware ELF and produces a
+  assembly or C program against the portable PRG32 ABI table and produces a
   `.prg32` game package.
 
-The resident firmware must be rebuilt when the runtime ABI changes. Cartridges
-must then be rebuilt against the matching `PRG32.elf` so function addresses and
-the cartridge RAM address stay correct.
+The resident firmware and cartridges must agree on the portable ABI major,
+hash, and required feature bits. Incompatible cartridges are rejected cleanly.
 
 ## 1. Choose The Environment
 
@@ -336,7 +335,7 @@ Every call into PRG32 C helpers saves and restores `ra`, and the stack remains
 ```bash
 python3 tools/prg32_game.py build \
   work/hello_world/hello_world.S \
-  --firmware-elf build-qemu/PRG32.elf \
+  --portable \
   --entry-prefix hello_world \
   --name hello_world \
   --out build-qemu/hello_world.prg32
@@ -352,7 +351,7 @@ If this fails with `missing tool: riscv32-esp-elf-gcc`, source ESP-IDF again.
 
 ## 10. Stage And Run The Cartridge In QEMU
 
-First start QEMU once so ESP-IDF creates `build-qemu/flash_image.bin`:
+First start QEMU once so ESP-IDF creates `build-qemu/qemu_flash.bin`:
 
 ```bash
 idf.py -B build-qemu \
@@ -366,7 +365,7 @@ Quit QEMU with `Ctrl+]`, then stage the cartridge:
 ```bash
 python3 tools/prg32_game.py upload-qemu \
   build-qemu/hello_world.prg32 \
-  --flash build-qemu/flash_image.bin
+  --flash build-qemu/qemu_flash.bin
 ```
 
 Start QEMU again:
@@ -439,20 +438,19 @@ The board should show the PRG32 splash and then setup if no cartridge is stored.
 
 ## 12. Build The Physical ESP32-C6 Cartridge
 
-Build the same source against the physical firmware ELF:
+Build the same source as a portable cartridge for the physical board:
 
 ```bash
 python3 tools/prg32_game.py build \
   work/hello_world/hello_world.S \
-  --firmware-elf build-esp32c6/PRG32.elf \
+  --portable \
   --entry-prefix hello_world \
   --name hello_world \
   --out build-esp32c6/hello_world.prg32
 ```
 
-Do not upload the QEMU cartridge to the ESP32-C6 board. QEMU and hardware use
-the same package format, but each cartridge must be linked against the matching
-resident firmware ELF.
+QEMU and hardware use the same package format and portable ABI. Keep separate
+outputs when the surrounding metadata or target-specific assets differ.
 
 ## 13. Upload The Cartridge To The Physical Board
 
@@ -496,9 +494,10 @@ curl http://192.168.4.1/api/screenshot.bmp --output hello_world.bmp
 ## 14. Create A Cartridge Store Publishing Package
 
 The current checked-in cartridge tool builds and uploads board/QEMU cartridges.
-For store publishing, create the metadata bundle explicitly. A store may accept
-this zip at `POST /api/publish` or `POST /api/publish/bundle`; check the store
-administrator's policy and token requirements.
+For store publishing, create the metadata bundle explicitly. Cartridge Store
+accepts this zip at `POST /api/publish/bundle`; `POST /api/publish` is a
+compatibility alias for the same zip-bundle shape. Check the store
+administrator's token and editor-review policy.
 
 Create a bundle directory:
 
@@ -576,15 +575,15 @@ $env:PRG32_STORE_TOKEN = "replace-with-classroom-token"
 Publish with `curl`:
 
 ```bash
-curl -X POST "$PRG32_STORE_URL/api/publish" \
+curl -X POST "$PRG32_STORE_URL/api/publish/bundle" \
   -H "Authorization: Bearer $PRG32_STORE_TOKEN" \
   -F "bundle=@build/store/hello_world-1.0.0.zip"
 ```
 
-Some stores expose `/api/publish/bundle` for prebuilt bundles:
+The compatibility alias accepts the same bundle:
 
 ```bash
-curl -X POST "$PRG32_STORE_URL/api/publish/bundle" \
+curl -X POST "$PRG32_STORE_URL/api/publish" \
   -H "Authorization: Bearer $PRG32_STORE_TOKEN" \
   -F "bundle=@build/store/hello_world-1.0.0.zip"
 ```
@@ -597,6 +596,9 @@ Verify the catalog:
 curl "$PRG32_STORE_URL/api/games"
 curl "$PRG32_STORE_URL/api/games/org.uniparthenope.hello-world"
 ```
+
+If the upload response says `status: pending`, an editor must verify the
+submission before these catalog requests show the new cartridge.
 
 Download the published physical artifact for a final smoke test:
 

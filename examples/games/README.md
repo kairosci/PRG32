@@ -64,7 +64,7 @@ C versions are best for:
 - first C programming labs
 - comparing assembly and C implementations
 - showing that PRG32 is a small API, not an assembly-only runtime
-- playing the fuller versions of the device-demo game ideas, especially the
+- playing the fuller versions of the DeviceDemo cartridge ideas, especially the
   platformer tile-engine course, the fixed-point raycaster, and the
   dual-playfield space cockpit
 
@@ -191,7 +191,7 @@ The board starts the `PRG32` Wi-Fi access point by default for cartridge uploads
 ```bash
 python3 tools/prg32_game.py build \
   examples/games/tetris/ascii/game.S \
-  --firmware-elf build-esp32c6/PRG32.elf \
+  --portable \
   --entry-prefix tetris_ascii \
   --name tetris-ascii \
   --out build-esp32c6/tetris-ascii.prg32
@@ -202,7 +202,7 @@ python3 tools/prg32_game.py build \
 ```bash
 python3 tools/prg32_game.py build \
   examples/games/tetris/graphics/game.S \
-  --firmware-elf build-esp32c6/PRG32.elf \
+  --portable \
   --entry-prefix tetris_graphics \
   --name tetris-graphics \
   --out build-esp32c6/tetris-graphics.prg32
@@ -213,7 +213,7 @@ python3 tools/prg32_game.py build \
 ```bash
 python3 tools/prg32_game.py build \
   examples/games/platformer/c/game.c \
-  --firmware-elf build-esp32c6/PRG32.elf \
+  --portable \
   --entry-prefix platformer_c \
   --name platformer-c \
   --out build-esp32c6/platformer-c.prg32
@@ -252,14 +252,14 @@ idf.py -B build-qemu -D SDKCONFIG=build-qemu/sdkconfig -D SDKCONFIG_DEFAULTS=sdk
 ```
 
 Stop QEMU after the first successful launch. This creates
-`build-qemu/flash_image.bin`.
+`build-qemu/qemu_flash.bin`.
 
 ### 3. Build a QEMU Cartridge
 
 ```bash
 python3 tools/prg32_game.py build \
   examples/games/tetris/graphics/game.S \
-  --firmware-elf build-qemu/PRG32.elf \
+  --portable \
   --entry-prefix tetris_graphics \
   --name tetris-graphics \
   --out build-qemu/tetris-graphics.prg32
@@ -279,7 +279,7 @@ name.
 ```bash
 python3 tools/prg32_game.py upload-qemu \
   build-qemu/tetris-graphics.prg32 \
-  --flash build-qemu/flash_image.bin
+  --flash build-qemu/qemu_flash.bin
 ```
 
 ### 5. Run QEMU Again

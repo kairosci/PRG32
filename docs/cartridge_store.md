@@ -4,7 +4,10 @@
 
 ```text
 Developer machine
-  prg32_game.py publish ------------------> CartridgeStore /api/publish
+  prg32_game.py publish -------------> Cartridge Store /api/publish/bundle
+                                                    |
+                                                    v
+                                           pending editor review
                                                     |
                                                     v
                                                 catalog
@@ -13,7 +16,7 @@ PRG32 device (Setup -> download)      <-- GET /api/games/<id>/download
 prg32_game.py store-download          <-- GET /api/games/<id>/download
 ```
 
-CartridgeStore is the companion catalog service for PRG32 cartridges. It
+Cartridge Store is the companion catalog service for PRG32 cartridges. It
 publishes architecture-specific `.prg32` artifacts for physical ESP32-C6 boards
 and QEMU desktop builds.
 
@@ -64,6 +67,21 @@ QEMU and physical firmware use different architecture strings. Publish the
 matching `qemu` or `esp32c6` variant before expecting it to appear as
 compatible.
 
+The host tools and firmware validate the cartridge ABI before deployment. Store
+downloads are rejected when the cartridge ABI major, ABI hash, required feature
+bits, import model, or legacy load address are not compatible with the current
+runtime. Rebuild incompatible cartridges with `--portable` from the matching
+PRG32 checkout.
+
+To prepare all checked-in examples for store publishing:
+
+```bash
+python3 tools/prg32_build_portable_examples.py --clean
+```
+
+The generated zip files under `build-portable-examples` are ready for
+`tools/prg32_game.py publish-bundle` or manual CartridgeStore upload.
+
 ## 4. Publishing from the developer machine
 
 ```bash
@@ -79,7 +97,7 @@ Build and publish a C cartridge directly:
 ```bash
 python3 tools/prg32_game.py publish \
   examples/games/tetris/c/game.c \
-  --firmware-elf build-esp32c6/PRG32.elf \
+  --portable \
   --entry-prefix tetris_c \
   --name tetris-c \
   --id org.uniparthenope.tetris-c \
@@ -88,6 +106,10 @@ python3 tools/prg32_game.py publish \
   --architecture esp32c6 \
   --store-url http://192.168.1.42:5080
 ```
+
+Current Cartridge Store deployments accept zip bundles at
+`/api/publish/bundle`. Uploads may require a session or Bearer token and are
+submitted for editor review before they appear in the public catalog.
 
 Pack and publish a multi-architecture bundle:
 
@@ -99,6 +121,11 @@ python3 tools/prg32_game.py pack-bundle \
 python3 tools/prg32_game.py publish-bundle tetris.zip \
   --store-url http://192.168.1.42:5080
 ```
+
+The PRG32 hardware smoke test is published from the external
+[DeviceDemo repository](https://github.com/riscv-prg32/DeviceDemo). That
+repository contains its own cartridge metadata, colophon, Store bundle manifest,
+and build/publish instructions for the `esp32c6` and `qemu` variants.
 
 Download a cartridge from the host and upload it to the board:
 
@@ -139,4 +166,5 @@ for QEMU builds, or write the URL to NVS from firmware setup. Host-side
 | `NOT COMPATIBLE WITH THIS FIRMWARE` | No matching architecture in catalog | Publish the matching architecture variant first |
 | `TOO LARGE` during download | Cartridge exceeds slot partition | Re-flash with a larger partition, or use a smaller cartridge |
 | `401` from `prg32_game.py publish` | Missing or invalid API token | Add `--token` or set `store_token` in `~/.prg32/config.json` |
+| Published game is not visible | Upload is pending editor review | Ask an editor to verify the submission in Cartridge Store |
 | QEMU build shows `NOT FOUND` for mDNS | Expected: mDNS is unavailable in QEMU | Set `CONFIG_PRG32_STORE_URL` in `sdkconfig.defaults.qemu` |

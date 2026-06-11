@@ -3,10 +3,11 @@
 These demos isolate framework rendering features without full game rules. Use
 them when teaching one graphics concept at a time.
 
-The resident firmware also includes a setup-launched `DEVICE DEMO` that checks
+The fuller hardware smoke test is maintained as the external
+[DeviceDemo cartridge](https://github.com/riscv-prg32/DeviceDemo). It checks
 the physical display, joystick input, audio beep, Wi-Fi status, cartridge state,
 sprites, scrolling, status bands, dual playfields, and arcade-inspired 320x200
-sketches without rebuilding a cartridge.
+sketches through the same cartridge workflow students use for games.
 
 | Demo | Assembly source | C source | Entry prefixes | Shows |
 |---|---|---|---|---|
@@ -110,7 +111,7 @@ prefix:
 ```bash
 python3 tools/prg32_game.py build \
   examples/features/animated_sprites/demo.S \
-  --firmware-elf build-esp32c6/PRG32.elf \
+  --portable \
   --entry-prefix animated_sprites \
   --name animated-sprites \
   --out build-esp32c6/animated-sprites.prg32
@@ -121,7 +122,7 @@ For the C version:
 ```bash
 python3 tools/prg32_game.py build \
   examples/features/animated_sprites/c/demo.c \
-  --firmware-elf build-esp32c6/PRG32.elf \
+  --portable \
   --entry-prefix animated_sprites_c \
   --name animated-sprites-c \
   --out build-esp32c6/animated-sprites-c.prg32
@@ -140,5 +141,5 @@ For QEMU, build against `build-qemu/PRG32.elf` and stage the cartridge:
 ```bash
 python3 tools/prg32_game.py upload-qemu \
   build-qemu/animated-sprites.prg32 \
-  --flash build-qemu/flash_image.bin
+  --flash build-qemu/qemu_flash.bin
 ```

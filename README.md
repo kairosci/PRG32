@@ -19,7 +19,7 @@ brew install git cmake ninja dfu-util ccache libusb python
 
 # 2) ESP-IDF
 cd $HOME
-git clone -b v5.3 --recursive https://github.com/espressif/esp-idf.git
+git clone -b v5.4 --recursive https://github.com/espressif/esp-idf.git
 cd esp-idf
 ./install.sh esp32c3,esp32c6
 . ./export.sh
@@ -42,11 +42,11 @@ cd <path_to_PRG32>
 . $HOME/esp-idf/export.sh
 python3 tools/prg32_game.py build \
   examples/games/asteroids/graphics/game.S \
-  --firmware-elf build-qemu/PRG32.elf \
+  --portable \
   --entry-prefix asteroids_graphics \
   --name asteroids \
   --out build-qemu/asteroids.prg32
-python3 tools/prg32_game.py upload-qemu build-qemu/asteroids.prg32 --flash build-qemu/flash_image.bin
+python3 tools/prg32_game.py upload-qemu build-qemu/asteroids.prg32 --flash build-qemu/qemu_flash.bin
 ```
 
 Run everything with one command next time:
@@ -161,7 +161,7 @@ Recommended reading paths:
 ```bash
 brew install git cmake ninja dfu-util ccache libusb python
 cd $HOME
-git clone -b v5.3 --recursive https://github.com/espressif/esp-idf.git
+git clone -b v5.4 --recursive https://github.com/espressif/esp-idf.git
 cd esp-idf
 ./install.sh esp32c3,esp32c6
 . ./export.sh
@@ -251,7 +251,7 @@ Install ESP-IDF:
 
 ```bash
 cd $HOME
-git clone -b v5.3 --recursive https://github.com/espressif/esp-idf.git
+git clone -b v5.4 --recursive https://github.com/espressif/esp-idf.git
 cd esp-idf
 ./install.sh esp32c3,esp32c6
 . ./export.sh
@@ -309,7 +309,7 @@ Linux notes:
 
 Open the repository root in PlatformIO. The checked-in `platformio.ini` default
 environment is `prg32-esp32c6`, which targets the ESP32-C6 DevKitC-1 with
-ESP-IDF, reuses the standard `main` component, and applies
+ESP-IDF, reuses the standard `main` component and applies
 `partitions_prg32.csv` plus `sdkconfig.defaults`.
 
 CLI equivalents:
@@ -321,7 +321,7 @@ pio device monitor -b 115200
 ```
 
 The ESP32-C6 build keeps UART0 as the primary ESP-IDF console and enables
-native USB Serial/JTAG as secondary output for PlatformIO Monitor. A healthy
+native USB Serial/JTAG as a secondary output for PlatformIO Monitor. A healthy
 boot logs the configured `prg32_lcd` ILI9341 pins before drawing the splash.
 
 The PlatformIO environment is for the physical ESP32-C6 classroom board. Keep
@@ -352,6 +352,52 @@ Flow:
 ```text
 .S source -> riscv toolchain -> .prg32 cartridge -> PRG32 runtime -> init/update/draw loop
 ```
+
+## Portable Cartridges
+
+PRG32 cartridges are portable across firmware builds that implement the same
+cartridge ABI. Portable cartridges call firmware services through a versioned
+ABI table instead of absolute firmware symbol addresses.
+
+Build a portable cartridge:
+
+```bash
+python3 tools/prg32_game.py build examples/games/pong/ascii/game.S \
+  --entry-prefix pong_ascii \
+  --portable \
+  --out build/pong.prg32
+```
+
+Inspect it:
+
+```bash
+python3 tools/prg32_game.py summary build/pong.prg32
+```
+
+The summary shows ABI major/minor, ABI hash, import model, and required or
+optional feature bits. Legacy absolute-import cartridges are still supported for
+old workflows, but they are tied to the firmware image used at build time and
+are not guaranteed to run on another firmware. ABI hash mismatches, missing
+required features, and incompatible legacy cartridges are rejected by the
+runtime, store download path, QEMU staging path, and HTTP upload tool with a
+diagnostic message.
+
+Build all checked-in examples as portable cartridges and CartridgeStore bundles:
+
+```bash
+python3 tools/prg32_build_portable_examples.py --clean
+```
+
+Prepare or flash a published single-file legacy firmware image:
+
+```bash
+python3 tools/prg32_prepare_legacy_firmware.py
+python3 tools/prg32_flash_legacy_firmware.py \
+  publish/legacy-firmware/PRG32-legacy-esp32c6.json \
+  --port /dev/cu.usbmodem5ABA0099241
+```
+
+See [docs/publishing_and_flashing_legacy_firmware.md](docs/publishing_and_flashing_legacy_firmware.md).
 
 Cartridge metadata and store publishing are documented in
 [docs/cartridge_metadata.md](docs/cartridge_metadata.md),
@@ -386,7 +432,7 @@ download server is the standalone **Cartridge Store** in
 - QEMU runs but the game does not move: focus the terminal running QEMU. Use
   arrow keys or `W`/`A`/`S`/`D` for joystick 1, `Enter`/`Space` for SELECT,
   `J`/`Z` for A, and `K`/`X` for B.
-- Cartridge upload fails: `build-qemu/flash_image.bin` is missing/invalid, or the
+- Cartridge upload fails: `build-qemu/qemu_flash.bin` is missing/invalid, or the
   cartridge is too large. Run QEMU once, then rerun `upload-qemu`.
 - `riscv32-esp-elf-gcc` missing: re-run `./install.sh esp32c3,esp32c6` and
   source the ESP-IDF export script.
@@ -396,7 +442,7 @@ download server is the standalone **Cartridge Store** in
 ## Learning Path
 
 1. Build and flash the resident firmware.
-2. Open setup with A+B at boot, run the device demo, and upload a cartridge.
+2. Open setup with A+B at boot, configure Wi-Fi or CartridgeStore, and upload a cartridge.
 3. Read `docs/tutorial.md` for assembly or `docs/tutorial_c_game.md` for C.
 4. Complete the labs in `docs/labs`.
 5. Modify one example game under `examples/games`.
@@ -455,13 +501,13 @@ cartridge is stored, or when multiple cartridges exist without a default. The
 setup menu can run a cartridge, set the default boot cartridge, configure Wi-Fi,
 configure CartridgeStore access, browse the store, open the audio setup menu,
 open the developer status-band menu, launch the unattended performance test,
-show the about screen, or launch the device demo.
+or show the about screen.
 Setup screens show the active Wi-Fi mode and current IP address,
 and the local joystick can navigate them with SELECT/B to confirm and A to go
-back. The device demo includes 320x200 sketches inspired by Pong, Breakout,
-Space Invaders, Pacman, Tetris, Pole Position, Asteroids, a side-scrolling
-platform game, a Doom-style raycaster, and a space cockpit that demonstrates
-dual playfields. When the audio configuration is usable for the current board,
+back. The former setup device demo now lives as the
+[DeviceDemo cartridge](https://github.com/riscv-prg32/DeviceDemo), which can be
+built, uploaded, and published through CartridgeStore like the teaching games.
+When the audio configuration is usable for the current board,
 the splash plays a short welcome sound; otherwise it falls back to the passive
 buzzer when configured.
 
@@ -544,9 +590,15 @@ for a step-by-step scientific-paper measurement workflow with screenshots.
 - `tools/prg32_game.py store-discover`: find CartridgeStore instances via mDNS.
 - `tools/prg32_game.py store-list`: print a CartridgeStore catalog table.
 - `tools/prg32_game.py store-download`: download a `.prg32` from a store.
-- `tools/prg32_game.py publish`: build a cartridge and publish a store bundle.
+- `tools/prg32_game.py publish`: build a cartridge and submit a store bundle.
 - `tools/prg32_game.py pack-bundle`: create a flat multi-architecture zip.
-- `tools/prg32_game.py publish-bundle`: upload a prepared bundle.
+- `tools/prg32_game.py publish-bundle`: submit a prepared bundle.
+- `tools/prg32_build_portable_examples.py`: build every checked-in example as
+  portable `.prg32` cartridges and CartridgeStore bundles.
+- `tools/prg32_prepare_legacy_firmware.py`: merge a physical firmware build into
+  one publishable binary.
+- `tools/prg32_flash_legacy_firmware.py`: flash a published single-file legacy
+  firmware image.
 
 See [docs/assets.md](docs/assets.md).
 

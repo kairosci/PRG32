@@ -64,20 +64,6 @@
 #define PRG32_PIN_BUZZER     -1
 #define PRG32_BOOT_DIAGNOSTIC_DELAY_MS 0
 
-#define PRG32_PIN_P2_LEFT    -1
-#define PRG32_PIN_P2_RIGHT   -1
-#define PRG32_PIN_P2_UP      -1
-#define PRG32_PIN_P2_DOWN    -1
-#define PRG32_PIN_P2_A       -1
-#define PRG32_PIN_P2_B       -1
-#define PRG32_PIN_P2_START   -1
-
-#define PRG32_CONTROLLER_BRIDGE_ENABLE 0
-#define PRG32_CONTROLLER_BRIDGE_UART 1
-#define PRG32_CONTROLLER_BRIDGE_BAUD 115200
-#define PRG32_PIN_CONTROLLER_TX -1
-#define PRG32_PIN_CONTROLLER_RX -1
-
 #define PRG32_PIN_RGB_LED -1
 
 #define PRG32_GAME_UPLOAD_ENABLE 0
@@ -105,28 +91,13 @@
 #define PRG32_PIN_BTN_DOWN   13
 #define PRG32_PIN_BTN_LEFT   18
 #define PRG32_PIN_BTN_RIGHT  19
-#define PRG32_PIN_BTN_START  14
+#define PRG32_PIN_BTN_START  20
 #define PRG32_PIN_BTN_A      21
 #define PRG32_PIN_BTN_B      22
 
-#define PRG32_PIN_SETUP      -1
+#define PRG32_PIN_SETUP      14
 
-/* Optional second digital joystick. Leave pins at -1 when not mounted. */
-#define PRG32_PIN_P2_LEFT    -1
-#define PRG32_PIN_P2_RIGHT   -1
-#define PRG32_PIN_P2_UP      -1
-#define PRG32_PIN_P2_DOWN    -1
-#define PRG32_PIN_P2_A       -1
-#define PRG32_PIN_P2_B       -1
-#define PRG32_PIN_P2_START   -1
-#define PRG32_PIN_BUZZER     15
-
-/* Optional USB-controller support via an external USB HID host bridge. */
-#define PRG32_CONTROLLER_BRIDGE_ENABLE -1
-#define PRG32_CONTROLLER_BRIDGE_UART 1
-#define PRG32_CONTROLLER_BRIDGE_BAUD 115200
-#define PRG32_PIN_CONTROLLER_TX 16
-#define PRG32_PIN_CONTROLLER_RX 17
+#define PRG32_PIN_BUZZER     -1
 
 /*
  * Many ESP32-C6 boards route the onboard addressable RGB LED to GPIO8. The
@@ -151,8 +122,17 @@
 
 /* Optional Wi-Fi score REST API. Fill credentials before flashing. */
 #define PRG32_WIFI_SCORES_ENABLE 0
+
+#if __has_include("prg32_env.h")
+#include "prg32_env.h"
+#endif
+
+#ifndef PRG32_WIFI_SSID
 #define PRG32_WIFI_SSID "YOUR_WIFI_SSID"
+#endif
+#ifndef PRG32_WIFI_PASSWORD
 #define PRG32_WIFI_PASSWORD "YOUR_WIFI_PASSWORD"
+#endif
 #define PRG32_SCORE_MAX 16
 #define PRG32_IDLE_HEARTBEAT_MS 5000
 
@@ -176,9 +156,12 @@
 #define PRG32_WIFI_AP_PASSWORD "prg32game"
 #define PRG32_WIFI_AP_CHANNEL 6
 #define PRG32_WIFI_AP_MAX_CONN 4
+#define PRG32_WIFI_COUNTRY_CODE "IT"
+#define PRG32_WIFI_STA_LEGACY_PROTOCOLS 1
 
 /* CartridgeStore integration constants. */
 #define PRG32_STORE_URL_MAX_LEN        128
+#define PRG32_STORE_SERVER_URL         "http://193.205.230.7:5080/"
 #define PRG32_STORE_MDNS_SERVICE       "_prg32store"
 #define PRG32_STORE_MDNS_PROTO         "_tcp"
 #define PRG32_STORE_MDNS_TIMEOUT_MS    3000
