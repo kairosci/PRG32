@@ -43,6 +43,11 @@ Named contributor metadata used across project docs:
   `riscv-prg32/MetricsServer`.
 - In-tree setup performance report tooling: `tools/prg32_metrics_paper.py`.
 - Uploadable game cartridge tool: `tools/prg32_game.py`.
+- Bulk portable example publishing helper:
+  `tools/prg32_build_portable_examples.py`.
+- Legacy resident firmware publishing/flashing helpers:
+  `tools/prg32_prepare_legacy_firmware.py` and
+  `tools/prg32_flash_legacy_firmware.py`.
 - Media conversion tools: `tools/prg32_image_convert.py`,
   `tools/prg32_image_prepare.py`, and `tools/prg32_audio_convert.py`.
 - Student VS Code setup: `.vscode` and `PRG32.code-workspace`.
@@ -427,6 +432,34 @@ Companion repository: https://github.com/riscv-prg32/CartridgeStore
 | `main/prg32_config.h` | `PRG32_STORE_*` compile-time constants |
 | `tools/prg32_game.py` | `publish`, `pack-bundle`, `publish-bundle`, `store-*` |
 | `docs/cartridge_store.md` | End-user integration guide |
+
+## PRG32 Cartridge ABI Compatibility
+
+- Treat `tools/prg32_abi.json` as the single source of truth for the portable
+  cartridge ABI.
+- Do not edit generated ABI files manually. Regenerate or check them with
+  `python3 tools/prg32_abi_gen.py` and `python3 tools/prg32_abi_gen.py --check`.
+- ABI function indices are append-only. Never reorder, remove, or change
+  existing function prototypes within the same ABI major version.
+- Any incompatible ABI change requires increasing `PRG32_ABI_MAJOR`.
+- Additive functions or optional feature bits may increase `PRG32_ABI_MINOR`.
+- Portable cartridges must not link against firmware-specific symbol addresses.
+- Legacy absolute-import cartridges may remain supported, but new examples and
+  documentation should prefer portable ABI-table cartridges.
+- Upload, QEMU staging, CartridgeStore downloads, and firmware setup downloads
+  should reject incompatible cartridges before deployment whenever the ABI
+  contract can be checked.
+
+For cartridge/ABI work, run the relevant available checks before finishing:
+
+```bash
+python3 tools/prg32_abi_gen.py --check
+python3 tools/prg32_game.py summary build/<example>.prg32
+git diff --check
+```
+
+If `pytest`, ESP-IDF, or the RISC-V toolchain is unavailable, state exactly
+which checks could not be run.
 
 ## Metadata Consistency Rules
 

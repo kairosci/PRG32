@@ -119,6 +119,8 @@ Typical response fields:
   "cart_magic": "PRG32CART",
   "cart_abi_major": 1,
   "cart_abi_minor": 0,
+  "cart_abi_hash": 3117075842,
+  "cart_abi_features": 511,
   "cart_load_addr": 1107296256,
   "cart_max_size": 32768,
   "cart_ram_size": 65536,
@@ -147,6 +149,8 @@ Expected behavior:
 
 - runtime returns a compact single `application/json` response with firmware,
   cartridge, display-backend, and diagnostic status;
+- `cart_abi_hash` and `cart_abi_features` let host tools reject incompatible
+  portable cartridges before upload;
 - runtime does not include the full cartridge import-address table, because that
   table is too large for a reliable board-local status response while Wi-Fi and
   display services are active;
@@ -688,7 +692,7 @@ Tool example:
 ```bash
 python3 tools/prg32_game.py publish \
   examples/games/tetris/c/game.c \
-  --firmware-elf build-esp32c6/PRG32.elf \
+  --portable \
   --entry-prefix tetris_c \
   --name tetris-c \
   --id org.uniparthenope.tetris-c \
@@ -864,7 +868,7 @@ field reference.
 
 ```bash
 python3 tools/prg32_game.py build examples/games/pong/c/game.c \
-  --firmware-elf build-esp32c6/PRG32.elf \
+  --portable \
   --entry-prefix pong_c \
   --out build-esp32c6/pong.prg32
 
@@ -878,7 +882,7 @@ python3 tools/prg32_game.py upload build-esp32c6/pong.prg32 \
 ```bash
 python3 tools/prg32_game.py publish \
   examples/games/tetris/c/game.c \
-  --firmware-elf build-esp32c6/PRG32.elf \
+  --portable \
   --entry-prefix tetris_c \
   --name tetris-c \
   --id org.uniparthenope.tetris-c \
