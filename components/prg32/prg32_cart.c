@@ -295,10 +295,9 @@ static int validate_header(const prg32_cart_header_t *h,
             return -1;
         }
     }
-    if (h->load_addr != (uint32_t)(uintptr_t)prg32_cart_exec) {
-        set_error(import_model == PRG32_IMPORT_MODEL_LEGACY_ABSOLUTE
-                      ? "legacy cartridge uses firmware-specific absolute imports; rebuild it with --portable"
-                      : "cartridge linked for a different runtime address");
+    if (import_model == PRG32_IMPORT_MODEL_LEGACY_ABSOLUTE &&
+        h->load_addr != (uint32_t)(uintptr_t)prg32_cart_exec) {
+        set_error("legacy cartridge uses firmware-specific absolute imports; rebuild it with --portable");
         return -1;
     }
     if (image_size > PRG32_CART_MAX_SIZE) {

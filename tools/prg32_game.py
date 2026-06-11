@@ -483,6 +483,11 @@ def build(args: argparse.Namespace) -> None:
                 "-fno-builtin",
                 "-Os",
             ]
+            if args.portable:
+                compile_cmd[1:1] = [
+                    "-mcmodel=medany",
+                    "-msmall-data-limit=0",
+                ]
         else:
             compile_cmd[1:1] = ["-x", "assembler-with-cpp"]
 
@@ -500,6 +505,8 @@ def build(args: argparse.Namespace) -> None:
             write_portable_stubs(stubs_s, init_sym, update_sym, draw_sym)
             run([
                 args.tool_prefix + "gcc",
+                "-mcmodel=medany",
+                "-msmall-data-limit=0",
                 "-march=" + args.march,
                 "-mabi=" + args.mabi,
                 "-x", "assembler-with-cpp",
@@ -519,6 +526,7 @@ def build(args: argparse.Namespace) -> None:
             "-nostdlib",
             "-march=" + args.march,
             "-mabi=" + args.mabi,
+            *(["-mcmodel=medany", "-msmall-data-limit=0"] if args.portable else []),
             "-Wl,--no-relax",
             *linker_scripts,
             "-Wl,-Map," + str(tmp / "game.map"),

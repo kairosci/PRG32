@@ -97,6 +97,12 @@ not-a-symbol
 
 
 class PortableHeaderTests(unittest.TestCase):
+    def test_portable_build_uses_position_tolerant_riscv_flags(self) -> None:
+        text = TOOL_PATH.read_text(encoding="utf-8")
+
+        self.assertIn('"-mcmodel=medany"', text)
+        self.assertIn('"-msmall-data-limit=0"', text)
+
     def test_v2_header_records_abi_table_import_model(self) -> None:
         header = prg32_game.CART_HEADER_V2.pack(
             prg32_game.CART_MAGIC,
