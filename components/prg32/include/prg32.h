@@ -84,7 +84,7 @@ extern "C" {
 
 #define PRG32_CART_MAGIC "PRG2"
 #define PRG32_CART_ABI_MAJOR 1
-#define PRG32_CART_ABI_MINOR 0
+#define PRG32_CART_ABI_MINOR 1
 #define PRG32_CART_FLAG_AUDIO_BLOCK (1u << 0)
 #define PRG32_CART_FLAG_MULTIPLAYER (1u << 1)
 #define PRG32_CART_FLAG_ABI_TABLE (1u << 2)
@@ -428,6 +428,7 @@ void prg32_platform_camera_follow(const prg32_platform_actor_t *actor,
 int prg32_sprite_hitbox(int ax, int ay, int aw, int ah, int bx, int by, int bw, int bh);
 void prg32_sprite_draw_8x8(int x, int y, const uint8_t *bits, uint16_t fg, uint16_t bg);
 void prg32_sprite_draw_16x16(int x, int y, const uint16_t *rgb565);
+void prg32_sprite_draw_24x24(int x, int y, const uint16_t *rgb565);
 uint32_t prg32_sprite_anim_frame(uint32_t now_ms,
                                  uint32_t frame_count,
                                  uint32_t frame_ms);

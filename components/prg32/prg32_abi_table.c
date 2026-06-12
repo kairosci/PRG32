@@ -129,5 +129,6 @@ const prg32_abi_table_t prg32_abi_table = {
         [PRG32_ABI_FN_PRG32_SPRITE_ANIM_UPDATE] = (const void *)prg32_sprite_anim_update,
         [PRG32_ABI_FN_PRG32_SPRITE_ANIM_DRAW] = (const void *)prg32_sprite_anim_draw,
         [PRG32_ABI_FN_PRG32_SCORE_SUBMIT] = (const void *)prg32_score_submit,
+        [PRG32_ABI_FN_PRG32_SPRITE_DRAW_24X24] = (const void *)prg32_sprite_draw_24x24,
     },
 };

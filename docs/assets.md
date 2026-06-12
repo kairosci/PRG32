@@ -16,6 +16,10 @@ python3 tools/prg32_image_convert.py player.png \
   --out build/player_sprite.c
 ```
 
+For a 24x24 multicolor sprite, use `--width 24 --height 24` and draw the
+generated RGB565 array with `prg32_sprite_draw_24x24(x, y, sprite)`.
+White pixels (`0xffff`) are transparent in the fixed-size sprite helpers.
+
 Convert an animated GIF to assembly frames:
 
 ```bash

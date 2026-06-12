@@ -450,13 +450,16 @@ Useful calls:
 
 - `prg32_sprite_draw_8x8(x, y, bits, fg, bg)`: draw a monochrome sprite.
 - `prg32_sprite_draw_16x16(x, y, rgb565)`: draw a 16x16 RGB565 sprite.
+- `prg32_sprite_draw_24x24(x, y, rgb565)`: draw a 24x24 RGB565 sprite.
 - `prg32_sprite_hitbox(...)`: test two axis-aligned rectangles.
 - `prg32_sprite_anim_frame(now_ms, frame_count, frame_ms)`: compute a frame.
 - `prg32_sprite_draw_frame(...)`: draw one frame from a sprite sheet.
 
-`prg32_sprite_draw_frame` accepts width, height, a pointer to contiguous RGB565
-frames, the frame index, and a transparent color. This keeps animated sprites
-usable from assembly without requiring a C object.
+The 16x16 and 24x24 helpers treat `PRG32_COLOR_WHITE` as transparent. For other
+sizes or another transparency key, `prg32_sprite_draw_frame` accepts width,
+height, a pointer to contiguous RGB565 frames, the frame index, and a
+transparent color. This keeps animated sprites usable from assembly without
+requiring a C object.
 
 ## Audio
 

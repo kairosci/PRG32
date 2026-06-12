@@ -31,6 +31,9 @@
 #define PRG32_GAME_WING_ASCII          25
 #define PRG32_GAME_WING_GRAPHICS       26
 #define PRG32_GAME_WING_C              27
+#define PRG32_GAME_FROGGER_ASCII       28
+#define PRG32_GAME_FROGGER_GRAPHICS    29
+#define PRG32_GAME_FROGGER_C           30
 
 /* Runtime console mode. */
 #define PRG32_MODE_UART_ONLY       0

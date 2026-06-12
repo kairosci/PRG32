@@ -1,7 +1,7 @@
 {
   "name": "prg32-cart-abi",
   "major": 1,
-  "minor": 0,
+  "minor": 1,
   "functions": [
     {
       "name": "prg32_ticks_ms",
@@ -792,6 +792,13 @@
       "return": "void",
       "args": [],
       "feature": "core",
+      "notes": "PRG32 cartridge ABI entry point."
+    },
+    {
+      "name": "prg32_sprite_draw_24x24",
+      "return": "void",
+      "args": [],
+      "feature": "sprites",
       "notes": "PRG32 cartridge ABI entry point."
     }
   ]

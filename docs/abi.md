@@ -46,11 +46,13 @@ keyboard, tilemap, platformer, and sprites.
 
 ## Cartridge Package ABI
 
-The executable cartridge ABI remains `PRG2` major `1`, minor `0`. Header v2
+The executable cartridge ABI remains `PRG2` major `1`, minor `1`. Header v2
 extends the original header via `header_size` with `abi_hash`,
 `required_features`, `optional_features`, relocation placeholders, and
 `import_model`. `import_model=abi-table` marks a portable cartridge;
 `import_model=legacy-absolute` marks the older firmware-specific path.
+
+ABI minor `1` adds `prg32_sprite_draw_24x24` as an append-only sprite helper.
 
 Store-ready cartridges append a backward-compatible `PRG32META` trailer after
 the payload. The trailer gives host tools and setup-mode clients standard

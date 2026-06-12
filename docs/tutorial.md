@@ -180,6 +180,7 @@ assembly lessons to:
   renderer on RISC-V.
 - `examples/games/wing_commander/c/game.c` for a playable dual-playfield
   cockpit with starfield, enemies, shield, and score.
+- `examples/games/frogger/c/game.c` for 24x24 multicolor sprites and hitboxes.
 
 Suggested order:
 

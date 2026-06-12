@@ -184,6 +184,10 @@ Use `examples/games/wing_commander/c/game.c` when the course reaches layered
 rendering. It keeps the starfield and cockpit in separate playfields, then adds
 enemies, laser input, score, and shield state in C.
 
+Use `examples/games/frogger/c/game.c` when the course reaches multicolor sprite
+assets. It draws a 24x24 RGB565 player sprite and uses simple rectangle
+hitboxes for traffic collision.
+
 ## Break and Fix Exercise
 
 Break it:

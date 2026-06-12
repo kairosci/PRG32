@@ -118,7 +118,7 @@ Typical response fields:
   "firmware_version": "1.0.0",
   "cart_magic": "PRG32CART",
   "cart_abi_major": 1,
-  "cart_abi_minor": 0,
+  "cart_abi_minor": 1,
   "cart_abi_hash": 3117075842,
   "cart_abi_features": 511,
   "cart_load_addr": 1107296256,

@@ -27,6 +27,7 @@ examples/games/<game>/
 | `platformer` | `platformer_ascii` | `platformer_graphics` | `platformer_c` |
 | `raycaster` | `raycaster_ascii` | `raycaster_graphics` | `raycaster_c` |
 | `wing_commander` | `wing_commander_ascii` | `wing_commander_graphics` | `wing_commander_c` |
+| `frogger` | `frogger_ascii` | `frogger_graphics` | `frogger_c` |
 
 Use the prefix to find the three exported symbols:
 
