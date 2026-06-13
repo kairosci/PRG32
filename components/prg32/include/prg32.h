@@ -274,7 +274,14 @@ const char *prg32_wifi_current_ssid(void);
 int prg32_wifi_setup_requested(void);
 int prg32_wifi_setup_run(void);
 void prg32_scores_api_start(void);
+int prg32_score_player_get(char *out_player, size_t max_len);
+int prg32_score_player_set(const char *player);
+int prg32_score_player_prompt(void);
 int prg32_score_submit(const char *game, const char *player, uint32_t score);
+int prg32_score_submit_current_player(const char *game, uint32_t score);
+int prg32_score_count(const char *game);
+int prg32_score_get(const char *game, int index, prg32_score_t *out_score);
+int prg32_scoreboard_show(const char *game, const char *title);
 int prg32_score_submit_remote(const char *base_url,
                               const char *game,
                               const char *player,

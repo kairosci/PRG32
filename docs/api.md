@@ -360,6 +360,10 @@ GET /api/scores
 
 Returns the board-local in-RAM scoreboard.
 
+Games can also access the same in-RAM records directly through
+`prg32_score_count` and `prg32_score_get`, or show the built-in on-device
+scoreboard with `prg32_scoreboard_show`.
+
 Example:
 
 ```bash
@@ -408,6 +412,8 @@ Success response:
 Expected behavior:
 
 - scores are stored in RAM by the board-local API;
+- each score record associates a short game identifier, player name, and
+  numeric score;
 - rebooting the board clears board-local scores;
 - use the external ScoreServer for persistent classroom leaderboards.
 
