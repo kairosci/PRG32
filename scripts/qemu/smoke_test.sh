@@ -7,13 +7,17 @@ QEMU_SDKCONFIG="$QEMU_BUILD_DIR/sdkconfig"
 QEMU_DEFAULTS="sdkconfig.defaults.qemu"
 cd "$ROOT_DIR"
 
+PASS=0
+FAIL=0
+
 ok() {
   echo "[OK] $1"
+  PASS=$((PASS + 1))
 }
 
 fail() {
   echo "[FAIL] $1"
-  exit 1
+  FAIL=$((FAIL + 1))
 }
 
 warn() {
@@ -22,10 +26,14 @@ warn() {
 
 if ! command -v python3 >/dev/null 2>&1; then
   fail "python3 not found (install Python 3 and retry)"
+  echo "Results: $PASS passed, $FAIL failed"
+  exit 1
 fi
 
 if ! command -v idf.py >/dev/null 2>&1; then
   fail "idf.py not found (run: source ESP-IDF export.sh)"
+  echo "Results: $PASS passed, $FAIL failed"
+  exit 1
 fi
 
 if ! command -v riscv32-esp-elf-gcc >/dev/null 2>&1; then
@@ -52,8 +60,9 @@ run_step "build-firmware" \
 
 if [[ ! -f "$QEMU_BUILD_DIR/PRG32.elf" ]]; then
   fail "build-firmware (missing $QEMU_BUILD_DIR/PRG32.elf)"
+else
+  ok "firmware-artifact"
 fi
-ok "firmware-artifact"
 
 run_step "build-demo-cartridge" \
   python3 tools/prg32_game.py build \
@@ -65,8 +74,9 @@ run_step "build-demo-cartridge" \
 
 if [[ ! -f "$QEMU_BUILD_DIR/pong.prg32" ]]; then
   fail "build-demo-cartridge (missing $QEMU_BUILD_DIR/pong.prg32)"
+else
+  ok "cartridge-artifact"
 fi
-ok "cartridge-artifact"
 
 if python3 - <<'PY'
 import subprocess
@@ -105,8 +115,9 @@ fi
 
 if [[ ! -f "$QEMU_BUILD_DIR/qemu_flash.bin" ]]; then
   fail "qemu-flash-image missing (run QEMU once with build-qemu/sdkconfig)"
+else
+  ok "qemu-flash-image"
 fi
-ok "qemu-flash-image"
 
 run_step "stage-cartridge-qemu" \
   python3 tools/prg32_game.py upload-qemu \
@@ -114,5 +125,10 @@ run_step "stage-cartridge-qemu" \
     --flash "$QEMU_BUILD_DIR/qemu_flash.bin"
 
 ok "smoke-test-complete"
+echo
+if [ "$FAIL" -gt 0 ]; then
+    echo "SMOKE TEST FAILED ($FAIL failures)"
+    exit 1
+fi
 echo "=== SMOKE TEST PASSED ==="
 echo "Firmware build, cartridge build, and QEMU staging are functional."
