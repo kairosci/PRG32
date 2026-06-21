@@ -231,13 +231,13 @@ Important constants:
 - `PRG32_CART_META_MAGIC`: optional metadata trailer magic, `PRG32META`.
 - `PRG32_CART_META_ABI`: metadata JSON ABI, `prg32-metadata-1.0`.
 - `PRG32_CART_COLOPHON_ABI`: colophon JSON ABI, `prg32-colophon-1.0`.
-- `PRG32_CART_MAX_SIZE`: maximum `.prg32` package size, currently 32 KiB.
+- `PRG32_CART_MAX_SIZE`: maximum `.prg32` package size, currently 128 KiB.
 - `PRG32_CART_RAM_SIZE`: statically placed executable cartridge RAM window,
-  configured by `CONFIG_PRG32_CART_RAM_PROFILE`. Physical ESP32-C6 builds
-  default to the 32 KiB classroom profile to leave more SRAM to the resident
-  runtime; QEMU defaults to the 64 KiB extended profile for desktop
-  compatibility. The window remains static because cartridges are linked to
-  the exported `prg32_cart_exec` address.
+  configured by `CONFIG_PRG32_CART_RAM_PROFILE`. Physical ESP32-C6 classroom
+  builds default to 32 KiB to preserve setup/Wi-Fi heap, while QEMU defaults to
+  the 64 KiB extended profile for desktop experiments. The window remains
+  static because cartridges are linked to the exported `prg32_cart_exec`
+  address.
 - `PRG32_CART_SLOT_COUNT`: number of persistent flash cartridge slots.
 
 Important functions:
@@ -245,7 +245,8 @@ Important functions:
 - `prg32_cart_load_addr()`: runtime address used by the host linker.
 - `prg32_cart_install(image, size, persist)`: validate, load, and optionally store.
 - `prg32_cart_store_slot(slot, image, size)`: validate and store an image without running it.
-- `prg32_cart_install_slot(slot, image, size, persist)`: install to `cart0` or `cart1`.
+- `prg32_cart_install_slot(slot, image, size, persist)`: install to one of
+  `cart0` through `cart3`.
 - `prg32_cart_select_slot(slot)`: load a stored cartridge from one slot.
 - `prg32_cart_default_slot()`: read the saved default boot cartridge.
 - `prg32_cart_set_default_slot(slot)`: save a default slot, or pass `-1` to clear it.
@@ -450,13 +451,21 @@ Useful calls:
 
 - `prg32_sprite_draw_8x8(x, y, bits, fg, bg)`: draw a monochrome sprite.
 - `prg32_sprite_draw_16x16(x, y, rgb565)`: draw a 16x16 RGB565 sprite.
+- `prg32_sprite_draw_24x24(x, y, rgb565)`: draw a 24x24 RGB565 sprite from
+  `24 * 24` contiguous halfwords.
 - `prg32_sprite_hitbox(...)`: test two axis-aligned rectangles.
 - `prg32_sprite_anim_frame(now_ms, frame_count, frame_ms)`: compute a frame.
 - `prg32_sprite_draw_frame(...)`: draw one frame from a sprite sheet.
 
-`prg32_sprite_draw_frame` accepts width, height, a pointer to contiguous RGB565
-frames, the frame index, and a transparent color. This keeps animated sprites
-usable from assembly without requiring a C object.
+The 16x16 and 24x24 helpers treat `PRG32_COLOR_WHITE` as transparent. For other
+sizes or another transparency key, `prg32_sprite_draw_frame` accepts width,
+height, a pointer to contiguous RGB565 frames, the frame index, and a
+transparent color. This keeps animated sprites usable from assembly without
+requiring a C object.
+
+See `examples/games/frogger/graphics/game.S` for the assembly call sequence and
+`examples/games/frogger/c/game.c` for a fuller game that pairs the 24x24 sprite
+with `prg32_sprite_hitbox`.
 
 ## Audio
 
